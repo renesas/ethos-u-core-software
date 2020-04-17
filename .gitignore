@@ -1,0 +1,8 @@
+/build
+/core_driver
+/cmsis
+/openamp
+/rtos/freertos
+/rtos/mbed-os
+/rtos/zephyr
+/tensorflow

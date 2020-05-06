@@ -35,5 +35,6 @@ target_sources(cmsis_device PRIVATE
     ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c
     ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/system_${ARM_CPU}.c)
 target_compile_definitions(cmsis_device PRIVATE ${ARM_CPU})
-target_include_directories(cmsis_device PRIVATE ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
-target_link_libraries(cmsis_device PRIVATE cmsis_core)
+target_compile_options(cmsis_device INTERFACE -include${ARM_CPU}.h)
+target_include_directories(cmsis_device PUBLIC ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
+target_link_libraries(cmsis_device PUBLIC cmsis_core)

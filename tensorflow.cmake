@@ -35,6 +35,8 @@ set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
 set(TFLU_TARGET "lib")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES})
+set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
+set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
 
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
     set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
@@ -49,7 +51,7 @@ string(JOIN TFLU_TAGS " " TFLU_TAGS)
 
 # Command and target
 add_custom_target(tflu_gen ALL
-                  COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite TARGET=${TFLU_TARGET} TARGET_ARCH=${TFLU_TARGET_ARCH} CC_TOOL=${TFLU_CC} CXX_TOOL=${TFLU_CXX} AR_TOOL=${TFLU_AR} GENDIR=${TFLU_GENDIR} CMSIS_PATH=${CMSIS_PATH} ETHOSU_DRIVER_PATH=${CORE_DRIVER_PATH} ETHOSU_DRIVER_LIBS=${TFLU_ETHOSU_LIBS} TAGS="${TFLU_TAGS}"
+                  COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite TARGET=${TFLU_TARGET} TARGET_ARCH=${TFLU_TARGET_ARCH} CC_TOOL=${TFLU_CC} CXX_TOOL=${TFLU_CXX} AR_TOOL=${TFLU_AR} GENDIR=${TFLU_GENDIR} CMSIS_PATH=${CMSIS_PATH} ETHOSU_DRIVER_PATH=${CORE_DRIVER_PATH} ETHOSU_DRIVER_LIBS=${TFLU_ETHOSU_LIBS} TAGS="${TFLU_TAGS}" BUILD_TYPE=${TFLU_BUILD_TYPE}
                   WORKING_DIRECTORY ${TENSORFLOW_PATH})
 
 # Create library and link library to custom target

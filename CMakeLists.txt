@@ -29,8 +29,9 @@ set(CMSIS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis" CACHE PATH "Path to CMSIS.")
 set(CORE_DRIVER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core_driver" CACHE PATH "Path to core driver.")
 set(TENSORFLOW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow" CACHE PATH "Path to Tensorflow.")
 
-# Enable NPU backend
-set(CORE_SOFTWARE_BACKEND "NPU" CACHE STRING "Enable NPU backend. (None, NPU)")
+# Select accelerator for tensorflow
+set(CORE_SOFTWARE_ACCELERATOR "NPU" CACHE STRING "Set NPU backend for TFLU")
+set_property(CACHE CORE_SOFTWARE_ACCELERATOR PROPERTY STRINGS CPU CMSIS-NN NPU)
 
 # Define build options
 set(CORE_SOFTWARE_RTOS "None" CACHE STRING "Select RTOS to include. (None, MbedOS, FreeRTOS, Zephyr)")
@@ -38,17 +39,20 @@ set(CORE_SOFTWARE_RTOS "None" CACHE STRING "Select RTOS to include. (None, MbedO
 #
 # Build
 #
+add_library(ethosu_core INTERFACE)
 
 # Build CMSIS
 include(cmsis.cmake)
 
 # Build core driver
-set(ETHOSU_PMU_INTERACTIVE OFF)
-add_subdirectory(${CORE_DRIVER_PATH} core_driver)
+if (CORE_SOFTWARE_ACCELERATOR STREQUAL "NPU")
+    set(ETHOSU_PMU_INTERACTIVE OFF)
+    add_subdirectory(${CORE_DRIVER_PATH} core_driver)
+    target_link_libraries(ethosu_core INTERFACE ethosu_core_driver)
+endif()
 
 # Build Tensorflow library
 include(tensorflow.cmake)
 
 # Merge libraries into static library
-add_library(ethosu_core INTERFACE)
-target_link_libraries(ethosu_core INTERFACE tflu cmsis_device ethosu_core_driver)
+target_link_libraries(ethosu_core INTERFACE tflu cmsis_device)

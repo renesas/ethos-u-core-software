@@ -35,10 +35,14 @@ set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
 set(TFLU_TARGET "lib")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES})
-set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
 
-if(CORE_SOFTWARE_BACKEND STREQUAL NPU)
+if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
+    set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
+    # Set preference for ethos-u over cmsis-nn
+    list(APPEND TFLU_TAGS "cmsis-nn")
     list(APPEND TFLU_TAGS "ethos-u")
+elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
+    list(APPEND TFLU_TAGS "cmsis-nn")
 endif()
 
 string(JOIN TFLU_TAGS " " TFLU_TAGS)

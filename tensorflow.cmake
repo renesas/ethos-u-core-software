@@ -35,7 +35,6 @@ set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
 set(TFLU_TARGET "lib")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES})
-set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
 
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)

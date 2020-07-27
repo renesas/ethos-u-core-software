@@ -25,16 +25,32 @@ string(REGEX REPLACE "^cortex-m([0-9]+)$" "\\1" CPU_NUMBER ${CMAKE_SYSTEM_PROCES
 
 set(ARM_CPU "ARMCM${CPU_NUMBER}")
 
-# CMSIS core library
+# Set CPU specific features
+if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m33")
+    set(ARM_FEATURES "_DSP_FP")
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m4")
+    set(ARM_FEATURES "_FP")
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m7")
+    set(ARM_FEATURES "_DP")
+else()
+    set(ARM_FEATURES "")
+endif()
+
+# CMSIS core
 add_library(cmsis_core INTERFACE)
 target_include_directories(cmsis_core INTERFACE ${CMSIS_PATH}/CMSIS/Core/Include)
 
-# CMSIS device library
-add_library(cmsis_device OBJECT)
-target_sources(cmsis_device PRIVATE
+# CMSIS device
+add_library(cmsis_device INTERFACE)
+target_include_directories(cmsis_device INTERFACE ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
+target_compile_options(cmsis_device INTERFACE -include${ARM_CPU}${ARM_FEATURES}.h)
+
+# CMSIS startup
+add_library(cmsis_startup STATIC
     ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c
     ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/system_${ARM_CPU}.c)
-target_compile_definitions(cmsis_device PRIVATE ${ARM_CPU})
-target_compile_options(cmsis_device INTERFACE -include${ARM_CPU}.h)
-target_include_directories(cmsis_device PUBLIC ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
-target_link_libraries(cmsis_device PUBLIC cmsis_core)
+target_compile_definitions(cmsis_startup PRIVATE ${ARM_CPU}${ARM_FEATURES})
+target_link_libraries(cmsis_startup PRIVATE cmsis_device cmsis_core)
+
+# Install libraries
+install(TARGETS cmsis_startup LIBRARY DESTINATION "lib")

@@ -31,6 +31,12 @@ else ()
     message(FATAL_ERROR "No compiler ID is set")
 endif()
 
+# Set floating point
+if (FLOAT)
+    set(TFLU_CC "${TFLU_CC} -mfloat-abi=${FLOAT}")
+    set(TFLU_CXX "${TFLU_CXX} -mfloat-abi=${FLOAT}")
+endif()
+
 set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
 set(TFLU_TARGET "lib")
@@ -58,3 +64,7 @@ add_library(tflu STATIC IMPORTED)
 set_property(TARGET tflu PROPERTY IMPORTED_LOCATION ${TFLU_GENDIR}/lib/libtensorflow-microlite.a)
 add_dependencies(tflu tflu_gen)
 target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
+
+# Install libraries and header files
+get_target_property(TFLU_IMPORTED_LOCATION tflu IMPORTED_LOCATION)
+install(FILES ${TFLU_IMPORTED_LOCATION} DESTINATION "lib")

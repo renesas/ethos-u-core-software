@@ -55,4 +55,4 @@ endif()
 include(tensorflow.cmake)
 
 # Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu cmsis_device)
+target_link_libraries(ethosu_core INTERFACE tflu cmsis_core cmsis_device)

@@ -36,6 +36,7 @@ set_property(CACHE CORE_SOFTWARE_ACCELERATOR PROPERTY STRINGS CPU CMSIS-NN NPU)
 
 # Define build options
 set(CORE_SOFTWARE_RTOS "None" CACHE STRING "Select RTOS to include. (None, MbedOS, FreeRTOS, Zephyr)")
+string(TOLOWER ${CORE_SOFTWARE_RTOS} CORE_SOFTWARE_RTOS_LOWER)
 
 #
 # Build
@@ -54,6 +55,10 @@ endif()
 
 # Build Tensorflow library
 include(tensorflow.cmake)
+
+# Build RTOS
+add_subdirectory(rtos)
+target_link_libraries(ethosu_core INTERFACE ethosu_core_rtos)
 
 # Build applications
 add_subdirectory(applications)

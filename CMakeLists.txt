@@ -27,10 +27,11 @@ project(core_software VERSION 0.0.1)
 # Setup paths
 set(CMSIS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis" CACHE PATH "Path to CMSIS.")
 set(CORE_DRIVER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core_driver" CACHE PATH "Path to core driver.")
+set(LINUX_DRIVER_STACK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../linux_driver_stack" CACHE PATH "Path to Linux driver stack for Arm Ethos-U.")
 set(TENSORFLOW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow" CACHE PATH "Path to Tensorflow.")
 
 # Select accelerator for tensorflow
-set(CORE_SOFTWARE_ACCELERATOR "NPU" CACHE STRING "Set NPU backend for TFLU")
+set(CORE_SOFTWARE_ACCELERATOR "NPU" CACHE STRING "Set NPU backend for Tensorflow Lite for microcontrollers")
 set_property(CACHE CORE_SOFTWARE_ACCELERATOR PROPERTY STRINGS CPU CMSIS-NN NPU)
 
 # Define build options
@@ -54,5 +55,8 @@ endif()
 # Build Tensorflow library
 include(tensorflow.cmake)
 
+# Build applications
+add_subdirectory(applications)
+
 # Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu cmsis_core cmsis_device)
+target_link_libraries(ethosu_core INTERFACE tflu cmsis_core cmsis_device ethosu_applications)

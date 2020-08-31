@@ -67,6 +67,7 @@ add_library(tflu STATIC IMPORTED)
 set_property(TARGET tflu PROPERTY IMPORTED_LOCATION ${TFLU_GENDIR}/lib/libtensorflow-microlite.a)
 add_dependencies(tflu tflu_gen)
 target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
+target_compile_definitions(tflu INTERFACE TF_LITE_STATIC_MEMORY)
 
 # Install libraries and header files
 get_target_property(TFLU_IMPORTED_LOCATION tflu IMPORTED_LOCATION)

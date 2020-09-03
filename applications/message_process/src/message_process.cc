@@ -20,6 +20,7 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <cstring>
 
 namespace MessageProcess {
 

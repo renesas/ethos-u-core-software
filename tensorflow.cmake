@@ -39,7 +39,7 @@ endif()
 
 set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
-set(TFLU_TARGET "lib")
+set(TFLU_TARGET "cortex_generic")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES})
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
 set(TFLU_DEBUG_OPTIMIZATION CACHE STRING "Tensorflow Lite Micro default optimization level for debug builds")
@@ -47,8 +47,6 @@ set(TFLU_RELEASE_OPTIMIZATION CACHE STRING "Tensorflow Lite Micro default optimi
 
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
     set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
-    # Set preference for ethos-u over cmsis-nn
-    list(APPEND TFLU_TAGS "cmsis-nn")
     list(APPEND TFLU_TAGS "ethos-u")
 elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
     list(APPEND TFLU_TAGS "cmsis-nn")

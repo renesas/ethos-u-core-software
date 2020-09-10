@@ -21,6 +21,7 @@
 #include <queue>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 
 namespace InferenceProcess {
 struct DataPtr {
@@ -33,17 +34,17 @@ struct DataPtr {
 struct InferenceJob {
     std::string name;
     DataPtr networkModel;
-    DataPtr input;
-    DataPtr output;
-    DataPtr expectedOutput;
+    std::vector<DataPtr> input;
+    std::vector<DataPtr> output;
+    std::vector<DataPtr> expectedOutput;
     size_t numBytesToPrint;
 
     InferenceJob();
     InferenceJob(const std::string &name,
                  const DataPtr &networkModel,
-                 const DataPtr &input,
-                 const DataPtr &output,
-                 const DataPtr &expectedOutput,
+                 const std::vector<DataPtr> &input,
+                 const std::vector<DataPtr> &output,
+                 const std::vector<DataPtr> &expectedOutput,
                  size_t numBytesToPrint);
 };
 

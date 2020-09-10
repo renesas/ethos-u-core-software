@@ -28,11 +28,13 @@
 #define TENSOR_ARENA_SIZE (1024)
 #endif
 
+using namespace std;
+
 __attribute__((section(".bss.NoInit"), aligned(16))) uint8_t inferenceProcessTensorArena[TENSOR_ARENA_SIZE];
 
 namespace {
 void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
-    const int numBytesToPrint = std::min(output->bytes, bytesToPrint);
+    const int numBytesToPrint = min(output->bytes, bytesToPrint);
 
     int dims_size = output->dims->size;
     printf("{\n");
@@ -64,7 +66,7 @@ bool copyOutput(const TfLiteTensor &src, InferenceProcess::DataPtr &dst) {
         return true;
     }
 
-    std::copy(src.data.uint8, src.data.uint8 + src.bytes, static_cast<uint8_t *>(dst.data));
+    copy(src.data.uint8, src.data.uint8 + src.bytes, static_cast<uint8_t *>(dst.data));
     dst.size = src.bytes;
 
     return false;
@@ -77,11 +79,11 @@ DataPtr::DataPtr(void *data, size_t size) : data(data), size(size) {}
 
 InferenceJob::InferenceJob() : numBytesToPrint(0) {}
 
-InferenceJob::InferenceJob(const std::string &name,
+InferenceJob::InferenceJob(const string &name,
                            const DataPtr &networkModel,
-                           const DataPtr &input,
-                           const DataPtr &output,
-                           const DataPtr &expectedOutput,
+                           const vector<DataPtr> &input,
+                           const vector<DataPtr> &output,
+                           const vector<DataPtr> &expectedOutput,
                            size_t numBytesToPrint) :
     name(name),
     networkModel(networkModel), input(input), output(output), expectedOutput(expectedOutput),
@@ -130,55 +132,80 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     tflite::MicroErrorReporter microErrorReporter;
     tflite::ErrorReporter *reporter = &microErrorReporter;
 
+    // Get model handle and verify that the version is correct
     const tflite::Model *model = ::tflite::GetModel(job.networkModel.data);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
-        printf("Model provided is schema version %d not equal "
-               "to supported version %d.\n",
+        printf("Model provided is schema version %d not equal to supported version %d.\n",
                model->version(),
                TFLITE_SCHEMA_VERSION);
         return true;
     }
 
+    // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
-
     tflite::MicroInterpreter interpreter(model, resolver, inferenceProcessTensorArena, TENSOR_ARENA_SIZE, reporter);
 
+    // Allocate tensors
     TfLiteStatus allocate_status = interpreter.AllocateTensors();
     if (allocate_status != kTfLiteOk) {
         printf("AllocateTensors failed for inference job: %s\n", job.name.c_str());
         return true;
     }
 
-    bool inputSizeError = false;
-    // TODO: adapt for multiple inputs
-    // for (unsigned int i = 0; i < interpreter.inputs_size(); ++i)
-    for (unsigned int i = 0; i < 1; ++i) {
-        TfLiteTensor *input = interpreter.input(i);
-        if (input->bytes != job.input.size) {
-            // If input sizes don't match, then we could end up copying
-            // uninitialized or partial data.
-            inputSizeError = true;
-            printf("Allocated size: %d for input: %d doesn't match the "
-                   "received input size: %d for job: %s\n",
-                   input->bytes,
-                   i,
-                   job.input.size,
-                   job.name.c_str());
-            return true;
+    // Create a filtered list of non empty input tensors
+    vector<TfLiteTensor *> inputTensors;
+    for (size_t i = 0; i < interpreter.inputs_size(); ++i) {
+        TfLiteTensor *tensor = interpreter.input(i);
+
+        if (tensor->bytes > 0) {
+            inputTensors.push_back(tensor);
         }
-        memcpy(input->data.uint8, job.input.data, input->bytes);
     }
-    if (inputSizeError) {
+
+    if (job.input.size() != inputTensors.size()) {
+        printf("Number of input buffers does not match number of non empty network tensors. input=%zu, network=%zu\n",
+               job.input.size(),
+               inputTensors.size());
         return true;
     }
 
+    // Copy input data
+    for (size_t i = 0; i < inputTensors.size(); ++i) {
+        const DataPtr &input       = job.input[i];
+        const TfLiteTensor *tensor = inputTensors[i];
+
+        if (input.size != tensor->bytes) {
+            printf("Input size does not match network size. job=%s, index=%zu, input=%zu, network=%u\n",
+                   job.name.c_str(),
+                   i,
+                   input.size,
+                   tensor->bytes);
+            return true;
+        }
+
+        copy(static_cast<char *>(input.data), static_cast<char *>(input.data) + input.size, tensor->data.uint8);
+    }
+
+    // Run the inference
     TfLiteStatus invoke_status = interpreter.Invoke();
     if (invoke_status != kTfLiteOk) {
         printf("Invoke failed for inference job: %s\n", job.name.c_str());
         return true;
     }
 
-    copyOutput(*interpreter.output(0), job.output);
+    // Copy output data
+    if (job.output.size() > 0) {
+        if (interpreter.outputs_size() != job.output.size()) {
+            printf("Number of outputs mismatch. job=%zu, network=%u\n", job.output.size(), interpreter.outputs_size());
+            return true;
+        }
+
+        for (unsigned i = 0; i < interpreter.outputs_size(); ++i) {
+            if (copyOutput(*interpreter.output(i), job.output[i])) {
+                return true;
+            }
+        }
+    }
 
     if (job.numBytesToPrint > 0) {
         // Print all of the output data, or the first NUM_BYTES_TO_PRINT bytes,
@@ -186,6 +213,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         printf("num_of_outputs: %d\n", interpreter.outputs_size());
         printf("output_begin\n");
         printf("[\n");
+
         for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
             TfLiteTensor *output = interpreter.output(i);
             print_output_data(output, job.numBytesToPrint);
@@ -193,44 +221,48 @@ bool InferenceProcess::runJob(InferenceJob &job) {
                 printf(",\n");
             }
         }
+
         printf("]\n");
         printf("output_end\n");
     }
 
-    if (job.expectedOutput.data != nullptr) {
-        bool outputSizeError = false;
-        // TODO: adapt for multiple outputs
-        // for (unsigned int i = 0; i < interpreter.outputs_size(); i++)
-        for (unsigned int i = 0; i < 1; i++) {
-            TfLiteTensor *output = interpreter.output(i);
-            if (job.expectedOutput.size != output->bytes) {
-                // If the expected output & the actual output size doesn't
-                // match, we could end up accessing out-of-bound data.
-                // Also there's no need to compare the data, as we know
-                // that sizes differ.
-                outputSizeError = true;
-                printf("Output size: %d for output: %d doesn't match with "
-                       "the expected output size: %d for job: %s\n",
-                       output->bytes,
-                       i,
-                       job.expectedOutput.size,
-                       job.name.c_str());
+    if (job.expectedOutput.size() > 0) {
+        if (job.expectedOutput.size() != interpreter.outputs_size()) {
+            printf("Expeded number of output tensors does not match network. job=%s, expected=%zu, network=%zu\n",
+                   job.name.c_str(),
+                   job.expectedOutput.size(),
+                   interpreter.outputs_size());
+            return true;
+        }
+
+        for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
+            const DataPtr &expected    = job.expectedOutput[i];
+            const TfLiteTensor *output = interpreter.output(i);
+
+            if (expected.size != output->bytes) {
+                printf(
+                    "Expected tensor size does not match network size. job=%s, index=%u, expected=%zu, network=%zu\n",
+                    job.name.c_str(),
+                    i,
+                    expected.size,
+                    output->bytes);
                 return true;
             }
+
             for (unsigned int j = 0; j < output->bytes; ++j) {
-                if (output->data.uint8[j] != (static_cast<uint8_t *>(job.expectedOutput.data))[j]) {
-                    printf("Output data doesn't match expected output data at index: "
-                           "%d, expected: %02X actual: %02X",
+                if (output->data.uint8[j] != static_cast<uint8_t *>(expected.data)[j]) {
+                    printf("Expected tensor size does not match network size. job=%s, index=%u, offset=%u, "
+                           "expected=%02x, network=%02x\n",
+                           job.name.c_str(),
+                           i,
                            j,
-                           (static_cast<uint8_t *>(job.expectedOutput.data))[j],
+                           static_cast<uint8_t *>(expected.data)[j],
                            output->data.uint8[j]);
                 }
             }
         }
-        if (outputSizeError) {
-            return true;
-        }
     }
+
     printf("Finished running job: %s\n", job.name.c_str());
 
     return false;

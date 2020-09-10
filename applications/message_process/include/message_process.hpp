@@ -24,6 +24,7 @@
 
 #include <cstddef>
 #include <cstdio>
+#include <vector>
 
 namespace MessageProcess {
 
@@ -77,7 +78,7 @@ public:
     void handleIrq();
     bool handleMessage();
     void sendPong();
-    void sendInferenceRsp(uint64_t userArg, size_t ofmSize, bool failed);
+    void sendInferenceRsp(uint64_t userArg, std::vector<InferenceProcess::DataPtr> &ofm, bool failed);
 
 private:
     QueueImpl queueIn;

@@ -22,6 +22,9 @@
 #include <cstdio>
 #include <cstring>
 
+using namespace std;
+using namespace InferenceProcess;
+
 namespace MessageProcess {
 
 QueueImpl::QueueImpl(ethosu_core_queue &queue) : queue(queue) {}
@@ -112,7 +115,7 @@ bool QueueImpl::write(const uint32_t type, const void *src, uint32_t length) {
 
 MessageProcess::MessageProcess(ethosu_core_queue &in,
                                ethosu_core_queue &out,
-                               InferenceProcess::InferenceProcess &inferenceProcess) :
+                               ::InferenceProcess::InferenceProcess &inferenceProcess) :
     queueIn(in),
     queueOut(out), inferenceProcess(inferenceProcess) {}
 
@@ -165,24 +168,47 @@ bool MessageProcess::handleMessage() {
 
         ethosu_core_inference_req &req = data.inferenceReq;
 
-        printf("InferenceReq. network={0x%x, %u}, ifm={0x%x, %u}, ofm={0x%x, %u}\n",
-               req.network.ptr,
-               req.network.size,
-               req.ifm.ptr,
-               req.ifm.size,
-               req.ofm.ptr,
-               req.ofm.size,
-               req.user_arg);
+        printf("InferenceReq. user_arg=0x%x, network={0x%x, %u}", req.user_arg, req.network.ptr, req.network.size);
 
-        InferenceProcess::DataPtr networkModel(reinterpret_cast<void *>(req.network.ptr), req.network.size);
-        InferenceProcess::DataPtr ifm(reinterpret_cast<void *>(req.ifm.ptr), req.ifm.size);
-        InferenceProcess::DataPtr ofm(reinterpret_cast<void *>(req.ofm.ptr), req.ofm.size);
-        InferenceProcess::DataPtr expectedOutput;
-        InferenceProcess::InferenceJob job("job", networkModel, ifm, ofm, expectedOutput, -1);
+        printf(", ifm_count=%u, ifm=[", req.ifm_count);
+        for (uint32_t i = 0; i < req.ifm_count; ++i) {
+            if (i > 0) {
+                printf(", ");
+            }
+
+            printf("{0x%x, %u}", req.ifm[i].ptr, req.ifm[i].size);
+        }
+        printf("]");
+
+        printf(", ofm_count=%u, ofm=[", req.ofm_count);
+        for (uint32_t i = 0; i < req.ofm_count; ++i) {
+            if (i > 0) {
+                printf(", ");
+            }
+
+            printf("{0x%x, %u}", req.ofm[i].ptr, req.ofm[i].size);
+        }
+        printf("]\n");
+
+        DataPtr networkModel(reinterpret_cast<void *>(req.network.ptr), req.network.size);
+
+        vector<DataPtr> ifm;
+        for (uint32_t i = 0; i < req.ifm_count; ++i) {
+            ifm.push_back(DataPtr(reinterpret_cast<void *>(req.ifm[i].ptr), req.ifm[i].size));
+        }
+
+        vector<DataPtr> ofm;
+        for (uint32_t i = 0; i < req.ofm_count; ++i) {
+            ofm.push_back(DataPtr(reinterpret_cast<void *>(req.ofm[i].ptr), req.ofm[i].size));
+        }
+
+        vector<DataPtr> expectedOutput;
+
+        InferenceJob job("job", networkModel, ifm, ofm, expectedOutput, -1);
 
         bool failed = inferenceProcess.runJob(job);
 
-        sendInferenceRsp(data.inferenceReq.user_arg, job.output.size, failed);
+        sendInferenceRsp(data.inferenceReq.user_arg, job.output, failed);
         break;
     }
     default:
@@ -198,15 +224,21 @@ void MessageProcess::sendPong() {
     }
 }
 
-void MessageProcess::sendInferenceRsp(uint64_t userArg, size_t ofmSize, bool failed) {
+void MessageProcess::sendInferenceRsp(uint64_t userArg, vector<DataPtr> &ofm, bool failed) {
     ethosu_core_inference_rsp rsp;
 
-    rsp.user_arg = userArg;
-    rsp.ofm_size = ofmSize;
-    rsp.status   = failed ? ETHOSU_CORE_STATUS_ERROR : ETHOSU_CORE_STATUS_OK;
+    rsp.user_arg  = userArg;
+    rsp.ofm_count = ofm.size();
+    rsp.status    = failed ? ETHOSU_CORE_STATUS_ERROR : ETHOSU_CORE_STATUS_OK;
 
-    printf(
-        "Sending inference response. userArg=0x%llx, ofm_size=%u, status=%u\n", rsp.user_arg, rsp.ofm_size, rsp.status);
+    for (size_t i = 0; i < ofm.size(); ++i) {
+        rsp.ofm_size[i] = ofm[i].size;
+    }
+
+    printf("Sending inference response. userArg=0x%llx, ofm_count=%u, status=%u\n",
+           rsp.user_arg,
+           rsp.ofm_count,
+           rsp.status);
 
     if (!queueOut.write(ETHOSU_CORE_MSG_INFERENCE_RSP, rsp)) {
         printf("Failed to write inference.\n");

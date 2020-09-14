@@ -46,6 +46,8 @@ set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro optimization lev
 
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
     set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
+    # Set preference for ethos-u over cmsis-nn
+    list(APPEND TFLU_TAGS "cmsis-nn")
     list(APPEND TFLU_TAGS "ethos-u")
 elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
     list(APPEND TFLU_TAGS "cmsis-nn")

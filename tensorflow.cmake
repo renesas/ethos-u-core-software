@@ -20,20 +20,20 @@ include(ProcessorCount)
 ProcessorCount(J)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "ARMClang")
-    set(TFLU_CC "${CMAKE_C_COMPILER} --target=${CMAKE_C_COMPILER_TARGET} -mcpu=${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}")
-    set(TFLU_CXX "${CMAKE_CXX_COMPILER} --target=${CMAKE_C_COMPILER_TARGET} -mcpu=${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}")
-    set(TFLU_AR ${CMAKE_AR})
+    set(TFLU_TOOLCHAIN "armclang")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(TFLU_CC "${CMAKE_C_COMPILER} -mcpu=${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}")
-    set(TFLU_CXX "${CMAKE_CXX_COMPILER} -mcpu=${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}")
-    set(TFLU_AR ${CMAKE_AR})
+    set(TFLU_TOOLCHAIN "gcc")
 else ()
     message(FATAL_ERROR "No compiler ID is set")
 endif()
 
+
+get_filename_component(TFLU_TARGET_TOOLCHAIN_ROOT ${CMAKE_C_COMPILER} DIRECTORY)
+
+set(TFLU_TARGET_TOOLCHAIN_ROOT "${TFLU_TARGET_TOOLCHAIN_ROOT}/")
 set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
-set(TFLU_TARGET "cortex_generic")
+set(TFLU_TARGET "cortex_m_generic")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES})
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
 set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro optimization level")
@@ -52,13 +52,12 @@ string(JOIN TFLU_TAGS " " TFLU_TAGS)
 # Command and target
 add_custom_target(tflu_gen ALL
                   COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite
+                          TARGET_TOOLCHAIN_ROOT=${TFLU_TARGET_TOOLCHAIN_ROOT}
+                          TOOLCHAIN=${TFLU_TOOLCHAIN}
                           GENDIR=${TFLU_GENDIR}
                           TARGET=${TFLU_TARGET}
                           TARGET_ARCH=${TFLU_TARGET_ARCH}
                           TAGS="${TFLU_TAGS}"
-                          CC_TOOL=${TFLU_CC}
-                          CXX_TOOL=${TFLU_CXX}
-                          AR_TOOL=${TFLU_AR}
                           $<$<BOOL:${FLOAT}>:FLOAT=${FLOAT}>
                           BUILD_TYPE=${TFLU_BUILD_TYPE}
                           $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>

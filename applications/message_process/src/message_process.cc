@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <inttypes.h>
 
 using namespace std;
 using namespace InferenceProcess;
@@ -150,7 +151,7 @@ bool MessageProcess::handleMessage() {
         return false;
     }
 
-    printf("Message. type=%u, length=%u\n", msg.type, msg.length);
+    printf("Message. type=%" PRIu32 ", length=%" PRIu32 "\n", msg.type, msg.length);
 
     // Read payload
     if (!queueIn.read(data.data, msg.length)) {
@@ -168,25 +169,28 @@ bool MessageProcess::handleMessage() {
 
         ethosu_core_inference_req &req = data.inferenceReq;
 
-        printf("InferenceReq. user_arg=0x%x, network={0x%x, %u}", req.user_arg, req.network.ptr, req.network.size);
+        printf("InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIu32 ", %" PRIu32 "}",
+               req.user_arg,
+               req.network.ptr,
+               req.network.size);
 
-        printf(", ifm_count=%u, ifm=[", req.ifm_count);
+        printf(", ifm_count=%" PRIu32 ", ifm=[", req.ifm_count);
         for (uint32_t i = 0; i < req.ifm_count; ++i) {
             if (i > 0) {
                 printf(", ");
             }
 
-            printf("{0x%x, %u}", req.ifm[i].ptr, req.ifm[i].size);
+            printf("{0x%" PRIx32 ", %" PRIu32 "}", req.ifm[i].ptr, req.ifm[i].size);
         }
         printf("]");
 
-        printf(", ofm_count=%u, ofm=[", req.ofm_count);
+        printf(", ofm_count=%" PRIu32 ", ofm=[", req.ofm_count);
         for (uint32_t i = 0; i < req.ofm_count; ++i) {
             if (i > 0) {
                 printf(", ");
             }
 
-            printf("{0x%x, %u}", req.ofm[i].ptr, req.ofm[i].size);
+            printf("{0x%" PRIx32 ", %" PRIu32 "}", req.ofm[i].ptr, req.ofm[i].size);
         }
         printf("]\n");
 
@@ -235,7 +239,7 @@ void MessageProcess::sendInferenceRsp(uint64_t userArg, vector<DataPtr> &ofm, bo
         rsp.ofm_size[i] = ofm[i].size;
     }
 
-    printf("Sending inference response. userArg=0x%llx, ofm_count=%u, status=%u\n",
+    printf("Sending inference response. userArg=0x%" PRIx64 ", ofm_count=%" PRIu32 ", status=%" PRIu32 "\n",
            rsp.user_arg,
            rsp.ofm_count,
            rsp.status);

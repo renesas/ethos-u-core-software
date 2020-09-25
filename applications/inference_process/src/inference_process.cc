@@ -24,6 +24,8 @@
 
 #include "inference_process.hpp"
 
+#include <inttypes.h>
+
 #ifndef TENSOR_ARENA_SIZE
 #define TENSOR_ARENA_SIZE (1024)
 #endif
@@ -44,7 +46,7 @@ void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
     }
     printf("%d],\n", output->dims->data[dims_size - 1]);
 
-    printf("\"data_address\": \"%08x\",\n", (uint32_t)output->data.data);
+    printf("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
     printf("\"data\":\"");
     for (int i = 0; i < numBytesToPrint - 1; ++i) {
         if (i % 16 == 0 && i != 0) {
@@ -135,7 +137,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Get model handle and verify that the version is correct
     const tflite::Model *model = ::tflite::GetModel(job.networkModel.data);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
-        printf("Model provided is schema version %d not equal to supported version %d.\n",
+        printf("Model provided is schema version %" PRIu32 " not equal to supported version %d.\n",
                model->version(),
                TFLITE_SCHEMA_VERSION);
         return true;

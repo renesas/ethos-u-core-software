@@ -77,19 +77,19 @@ bool copyOutput(const TfLiteTensor &src, InferenceProcess::DataPtr &dst) {
 } // namespace
 
 namespace InferenceProcess {
-DataPtr::DataPtr(void *data, size_t size) : data(data), size(size) {}
+DataPtr::DataPtr(void *_data, size_t _size) : data(_data), size(_size) {}
 
 InferenceJob::InferenceJob() : numBytesToPrint(0) {}
 
-InferenceJob::InferenceJob(const string &name,
-                           const DataPtr &networkModel,
-                           const vector<DataPtr> &input,
-                           const vector<DataPtr> &output,
-                           const vector<DataPtr> &expectedOutput,
-                           size_t numBytesToPrint) :
-    name(name),
-    networkModel(networkModel), input(input), output(output), expectedOutput(expectedOutput),
-    numBytesToPrint(numBytesToPrint) {}
+InferenceJob::InferenceJob(const string &_name,
+                           const DataPtr &_networkModel,
+                           const vector<DataPtr> &_input,
+                           const vector<DataPtr> &_output,
+                           const vector<DataPtr> &_expectedOutput,
+                           size_t _numBytesToPrint) :
+    name(_name),
+    networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
+    numBytesToPrint(_numBytesToPrint) {}
 
 InferenceProcess::InferenceProcess() : lock(0) {}
 

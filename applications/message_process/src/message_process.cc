@@ -28,7 +28,7 @@ using namespace InferenceProcess;
 
 namespace MessageProcess {
 
-QueueImpl::QueueImpl(ethosu_core_queue &queue) : queue(queue) {}
+QueueImpl::QueueImpl(ethosu_core_queue &_queue) : queue(_queue) {}
 
 bool QueueImpl::empty() const {
     return queue.header.read == queue.header.write;
@@ -116,9 +116,9 @@ bool QueueImpl::write(const uint32_t type, const void *src, uint32_t length) {
 
 MessageProcess::MessageProcess(ethosu_core_queue &in,
                                ethosu_core_queue &out,
-                               ::InferenceProcess::InferenceProcess &inferenceProcess) :
+                               ::InferenceProcess::InferenceProcess &_inferenceProcess) :
     queueIn(in),
-    queueOut(out), inferenceProcess(inferenceProcess) {}
+    queueOut(out), inferenceProcess(_inferenceProcess) {}
 
 void MessageProcess::run() {
     while (true) {

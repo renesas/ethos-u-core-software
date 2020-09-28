@@ -114,6 +114,22 @@ bool QueueImpl::write(const uint32_t type, const void *src, uint32_t length) {
     return write(vec, 2);
 }
 
+bool QueueImpl::skip(uint32_t length) {
+    uint32_t rpos = queue.header.read;
+
+    if (length > available()) {
+        return false;
+    }
+
+    queue.header.read = (rpos + length) % queue.header.size;
+
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    SCB_CleanDCache();
+#endif
+
+    return true;
+}
+
 MessageProcess::MessageProcess(ethosu_core_queue &in,
                                ethosu_core_queue &out,
                                ::InferenceProcess::InferenceProcess &_inferenceProcess) :
@@ -137,10 +153,6 @@ void MessageProcess::handleIrq() {
 
 bool MessageProcess::handleMessage() {
     ethosu_core_msg msg;
-    union {
-        ethosu_core_inference_req inferenceReq;
-        uint8_t data[1000];
-    } data;
 
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_InvalidateDCache();
@@ -153,21 +165,18 @@ bool MessageProcess::handleMessage() {
 
     printf("Message. type=%" PRIu32 ", length=%" PRIu32 "\n", msg.type, msg.length);
 
-    // Read payload
-    if (!queueIn.read(data.data, msg.length)) {
-        printf("Failed to read payload.\n");
-        return false;
-    }
-
     switch (msg.type) {
     case ETHOSU_CORE_MSG_PING:
         printf("Ping\n");
         sendPong();
         break;
     case ETHOSU_CORE_MSG_INFERENCE_REQ: {
-        std::memcpy(&data.inferenceReq, data.data, sizeof(data.data));
+        ethosu_core_inference_req req;
 
-        ethosu_core_inference_req &req = data.inferenceReq;
+        if (!queueIn.readOrSkip(req, msg.length)) {
+            printf("Failed to read payload.\n");
+            return false;
+        }
 
         printf("InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIu32 ", %" PRIu32 "}",
                req.user_arg,
@@ -212,11 +221,14 @@ bool MessageProcess::handleMessage() {
 
         bool failed = inferenceProcess.runJob(job);
 
-        sendInferenceRsp(data.inferenceReq.user_arg, job.output, failed);
+        sendInferenceRsp(req.user_arg, job.output, failed);
         break;
     }
-    default:
-        break;
+    default: {
+        printf("Unexpected message type: %" PRIu32 ", skipping %" PRIu32 " bytes\n", msg.type, msg.length);
+
+        queueIn.skip(msg.length);
+    } break;
     }
 
     return true;

@@ -55,10 +55,20 @@ public:
     bool read(uint8_t *dst, uint32_t length);
     bool write(const Vec *vec, size_t length);
     bool write(const uint32_t type, const void *src = nullptr, uint32_t length = 0);
+    bool skip(uint32_t length);
 
     template <typename T>
     bool read(T &dst) {
         return read(reinterpret_cast<uint8_t *>(&dst), sizeof(dst));
+    }
+
+    template <typename T>
+    bool readOrSkip(T &dst, uint32_t expectedLength) {
+        if (expectedLength == sizeof(dst)) {
+            return read(reinterpret_cast<uint8_t *>(&dst), sizeof(dst));
+        } else {
+            return skip(expectedLength);
+        }
     }
 
     template <typename T>

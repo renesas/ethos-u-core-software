@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2020 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 
-add_library(message_process STATIC src/message_process.cc)
-target_include_directories(message_process PUBLIC include ${LINUX_DRIVER_STACK_PATH}/kernel)
-target_link_libraries(message_process PRIVATE cmsis_core inference_process mailbox)
+add_library(mailbox STATIC)
+target_include_directories(mailbox PUBLIC include)
+target_sources(mailbox PRIVATE src/mailbox.cc)
+

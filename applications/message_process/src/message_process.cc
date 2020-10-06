@@ -100,10 +100,6 @@ bool QueueImpl::write(const Vec *vec, size_t length) {
     SCB_CleanDCache();
 #endif
 
-    // TODO replace with mailbox driver APIs
-    volatile uint32_t *set = reinterpret_cast<volatile uint32_t *>(0x41A00014);
-    *set                   = 0x1;
-
     return true;
 }
 
@@ -132,9 +128,12 @@ bool QueueImpl::skip(uint32_t length) {
 
 MessageProcess::MessageProcess(ethosu_core_queue &in,
                                ethosu_core_queue &out,
+                               Mailbox::Mailbox &mbox,
                                ::InferenceProcess::InferenceProcess &_inferenceProcess) :
     queueIn(in),
-    queueOut(out), inferenceProcess(_inferenceProcess) {}
+    queueOut(out), mailbox(mbox), inferenceProcess(_inferenceProcess) {
+    mailbox.registerCallback(mailboxCallback, reinterpret_cast<void *>(this));
+}
 
 void MessageProcess::run() {
     while (true) {
@@ -238,6 +237,7 @@ void MessageProcess::sendPong() {
     if (!queueOut.write(ETHOSU_CORE_MSG_PONG)) {
         printf("Failed to write pong.\n");
     }
+    mailbox.sendMessage();
 }
 
 void MessageProcess::sendInferenceRsp(uint64_t userArg, vector<DataPtr> &ofm, bool failed) {
@@ -259,5 +259,12 @@ void MessageProcess::sendInferenceRsp(uint64_t userArg, vector<DataPtr> &ofm, bo
     if (!queueOut.write(ETHOSU_CORE_MSG_INFERENCE_RSP, rsp)) {
         printf("Failed to write inference.\n");
     }
+    mailbox.sendMessage();
 }
+
+void MessageProcess::mailboxCallback(void *userArg) {
+    MessageProcess *_this = reinterpret_cast<MessageProcess *>(userArg);
+    _this->handleIrq();
+}
+
 } // namespace MessageProcess

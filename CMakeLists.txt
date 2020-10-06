@@ -58,5 +58,8 @@ include(tensorflow.cmake)
 # Build applications
 add_subdirectory(applications)
 
+# Build drivers
+add_subdirectory(drivers)
+
 # Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu cmsis_core cmsis_device ethosu_applications)
+target_link_libraries(ethosu_core INTERFACE tflu cmsis_core cmsis_device ethosu_applications ethosu_drivers)

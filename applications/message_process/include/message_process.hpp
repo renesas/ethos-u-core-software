@@ -21,6 +21,7 @@
 
 #include <ethosu_core_interface.h>
 #include <inference_process.hpp>
+#include <mailbox.hpp>
 
 #include <cstddef>
 #include <cstdio>
@@ -82,10 +83,12 @@ private:
 
 class MessageProcess {
 public:
-    MessageProcess(ethosu_core_queue &in, ethosu_core_queue &out, InferenceProcess::InferenceProcess &inferenceProcess);
+    MessageProcess(ethosu_core_queue &in,
+                   ethosu_core_queue &out,
+                   Mailbox::Mailbox &mbox,
+                   InferenceProcess::InferenceProcess &inferenceProcess);
 
     void run();
-    void handleIrq();
     bool handleMessage();
     void sendPong();
     void sendInferenceRsp(uint64_t userArg, std::vector<InferenceProcess::DataPtr> &ofm, bool failed);
@@ -93,7 +96,10 @@ public:
 private:
     QueueImpl queueIn;
     QueueImpl queueOut;
+    Mailbox::Mailbox &mailbox;
     InferenceProcess::InferenceProcess &inferenceProcess;
+    void handleIrq();
+    static void mailboxCallback(void *userArg);
 };
 
 } // namespace MessageProcess

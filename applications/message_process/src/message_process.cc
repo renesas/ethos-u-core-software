@@ -18,6 +18,8 @@
 
 #include <message_process.hpp>
 
+#include "cmsis_compiler.h"
+
 #include <cstddef>
 #include <cstdio>
 #include <cstring>

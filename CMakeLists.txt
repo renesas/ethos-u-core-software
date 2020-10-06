@@ -62,4 +62,4 @@ add_subdirectory(applications)
 add_subdirectory(drivers)
 
 # Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu cmsis_core cmsis_device ethosu_applications ethosu_drivers)
+target_link_libraries(ethosu_core INTERFACE tflu cmsis_core ethosu_applications ethosu_drivers)

@@ -24,6 +24,8 @@
 
 #include "inference_process.hpp"
 
+#include "cmsis_compiler.h"
+
 #include <inttypes.h>
 
 #ifndef TENSOR_ARENA_SIZE

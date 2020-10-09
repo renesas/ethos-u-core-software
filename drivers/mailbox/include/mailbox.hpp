@@ -19,6 +19,7 @@
 #ifndef MAILBOX_HPP
 #define MAILBOX_HPP
 
+#include <cstdint>
 #include <cstddef>
 #include <list>
 

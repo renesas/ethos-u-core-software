@@ -19,8 +19,8 @@
 #ifndef MAILBOX_HPP
 #define MAILBOX_HPP
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <list>
 
 namespace Mailbox {
@@ -29,7 +29,7 @@ class Mailbox {
 public:
     Mailbox();
     virtual ~Mailbox();
-    virtual bool sendMessage() = 0;
+    virtual bool sendMessage()   = 0;
     virtual void handleMessage() = 0;
     virtual bool verifyHardware();
     typedef void (*CallbackFptr)(void *userArg);

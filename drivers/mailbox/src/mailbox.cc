@@ -18,8 +18,8 @@
 
 #include <mailbox.hpp>
 
-#include <cstddef>
 #include <cassert>
+#include <cstddef>
 
 namespace Mailbox {
 

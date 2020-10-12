@@ -58,6 +58,7 @@ string(JOIN TFLU_TAGS " " TFLU_TAGS)
 # Command and target
 add_custom_target(tflu_gen ALL
                   COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite TARGET=${TFLU_TARGET} TARGET_ARCH=${TFLU_TARGET_ARCH} CC_TOOL=${TFLU_CC} CXX_TOOL=${TFLU_CXX} AR_TOOL=${TFLU_AR} GENDIR=${TFLU_GENDIR} CMSIS_PATH=${CMSIS_PATH} ETHOSU_DRIVER_PATH=${CORE_DRIVER_PATH} ETHOSU_DRIVER_LIBS=${TFLU_ETHOSU_LIBS} TAGS="${TFLU_TAGS}" BUILD_TYPE=${TFLU_BUILD_TYPE}  $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
+                  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/tensorflow/tensorflow/lite/micro/tools/make/downloads
                   WORKING_DIRECTORY ${TENSORFLOW_PATH})
 
 # Create library and link library to custom target

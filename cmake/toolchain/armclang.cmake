@@ -42,6 +42,21 @@ endif()
 # Add -mcpu to the compile options to override the -mcpu the CMake toolchain adds
 add_compile_options(-mcpu=${__CPU_COMPILE_TARGET})
 
+# Set floating point unit
+if("${__CPU_COMPILE_TARGET}" MATCHES "\\+fp")
+    set(FLOAT hard)
+elseif("${__CPU_COMPILE_TARGET}" MATCHES "\\+nofp")
+    set(FLOAT soft)
+elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m33" OR
+       "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m55")
+    set(FLOAT hard)
+else()
+    set(FLOAT soft)
+endif()
+
+add_compile_options(-mfloat-abi=${FLOAT})
+#add_link_options(-mfloat-abi=${FLOAT})
+
 # Link target
 set(__CPU_LINK_TARGET ${CMAKE_SYSTEM_PROCESSOR})
 if("nodsp" IN_LIST __CPU_FEATURES)

@@ -75,6 +75,10 @@ add_dependencies(tflu tflu_gen)
 target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
 target_compile_definitions(tflu INTERFACE TF_LITE_STATIC_MEMORY)
 
+if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
+    target_link_libraries(tflu INTERFACE ethosu_core_driver)
+endif()
+
 # Install libraries and header files
 get_target_property(TFLU_IMPORTED_LOCATION tflu IMPORTED_LOCATION)
 install(FILES ${TFLU_IMPORTED_LOCATION} DESTINATION "lib")

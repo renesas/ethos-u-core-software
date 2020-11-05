@@ -17,6 +17,7 @@
  */
 
 #include "tensorflow/lite/micro/all_ops_resolver.h"
+#include "tensorflow/lite/micro/cortex_m_generic/debug_log_callback.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/schema/schema_generated.h"
@@ -37,6 +38,11 @@ using namespace std;
 __attribute__((section(".bss.NoInit"), aligned(16))) uint8_t inferenceProcessTensorArena[TENSOR_ARENA_SIZE];
 
 namespace {
+
+void tflu_debug_log(const char *s) {
+    fprintf(stderr, "%s", s);
+}
+
 void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
     const int numBytesToPrint = min(output->bytes, bytesToPrint);
 
@@ -189,6 +195,9 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
         copy(static_cast<char *>(input.data), static_cast<char *>(input.data) + input.size, tensor->data.uint8);
     }
+
+    // Register debug log callback for profiling
+    RegisterDebugLogCallback(tflu_debug_log);
 
     // Run the inference
     TfLiteStatus invoke_status = interpreter.Invoke();

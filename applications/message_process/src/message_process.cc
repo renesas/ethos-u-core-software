@@ -240,13 +240,25 @@ bool MessageProcess::handleMessage() {
 
         vector<DataPtr> expectedOutput;
 
-        InferenceJob job("job", networkModel, ifm, ofm, expectedOutput, -1);
+        vector<uint8_t> pmuEventConfig;
+        for (uint32_t i = 0; i < ETHOSU_CORE_PMU_MAX; i++) {
+            pmuEventConfig[i] = req.pmu_event_config[i];
+        }
+
+        InferenceJob job(
+            "job", networkModel, ifm, ofm, expectedOutput, -1, pmuEventConfig, req.pmu_cycle_counter_enable);
         job.invalidate();
 
         bool failed = inferenceProcess.runJob(job);
         job.clean();
 
-        sendInferenceRsp(req.user_arg, job.output, failed);
+        sendInferenceRsp(req.user_arg,
+                         job.output,
+                         failed,
+                         job.pmuEventConfig,
+                         job.pmuCycleCounterEnable,
+                         job.pmuEventCount,
+                         job.pmuCycleCounterCount);
         break;
     }
     default: {
@@ -266,8 +278,19 @@ void MessageProcess::sendPong() {
     mailbox.sendMessage();
 }
 
-void MessageProcess::sendInferenceRsp(uint64_t userArg, vector<DataPtr> &ofm, bool failed) {
-    ethosu_core_inference_rsp rsp;
+void MessageProcess::sendInferenceRsp(uint64_t userArg,
+                                      vector<DataPtr> &ofm,
+                                      bool failed,
+                                      vector<uint8_t> &pmuEventConfig,
+                                      uint32_t pmuCycleCounterEnable,
+                                      vector<uint32_t> &pmuEventCount,
+                                      uint64_t pmuCycleCounterCount) {
+    ethosu_core_inference_rsp rsp = {
+        .pmu_event_count =
+            {
+                0,
+            },
+    };
 
     rsp.user_arg  = userArg;
     rsp.ofm_count = ofm.size();
@@ -276,6 +299,15 @@ void MessageProcess::sendInferenceRsp(uint64_t userArg, vector<DataPtr> &ofm, bo
     for (size_t i = 0; i < ofm.size(); ++i) {
         rsp.ofm_size[i] = ofm[i].size;
     }
+
+    for (size_t i = 0; i < pmuEventConfig.size(); i++) {
+        rsp.pmu_event_config[i] = pmuEventConfig[i];
+    }
+    rsp.pmu_cycle_counter_enable = pmuCycleCounterEnable;
+    for (size_t i = 0; i < pmuEventCount.size(); i++) {
+        rsp.pmu_event_count[i] = pmuEventCount[i];
+    }
+    rsp.pmu_cycle_counter_count = pmuCycleCounterCount;
 
     printf("Sending inference response. userArg=0x%" PRIx64 ", ofm_count=%" PRIu32 ", status=%" PRIu32 "\n",
            rsp.user_arg,

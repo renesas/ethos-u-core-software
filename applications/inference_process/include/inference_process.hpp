@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <array>
 #include <queue>
 #include <stdlib.h>
 #include <string>
@@ -41,6 +42,10 @@ struct InferenceJob {
     std::vector<DataPtr> output;
     std::vector<DataPtr> expectedOutput;
     size_t numBytesToPrint;
+    std::vector<uint8_t> pmuEventConfig;
+    uint32_t pmuCycleCounterEnable;
+    std::vector<uint32_t> pmuEventCount;
+    uint64_t pmuCycleCounterCount;
 
     InferenceJob();
     InferenceJob(const std::string &name,
@@ -48,7 +53,9 @@ struct InferenceJob {
                  const std::vector<DataPtr> &input,
                  const std::vector<DataPtr> &output,
                  const std::vector<DataPtr> &expectedOutput,
-                 size_t numBytesToPrint);
+                 size_t numBytesToPrint,
+                 const std::vector<uint8_t> &pmuEventConfig,
+                 const uint32_t pmuCycleCounterEnable);
 
     void invalidate();
     void clean();

@@ -96,7 +96,13 @@ public:
     void run();
     bool handleMessage();
     void sendPong();
-    void sendInferenceRsp(uint64_t userArg, std::vector<InferenceProcess::DataPtr> &ofm, bool failed);
+    void sendInferenceRsp(uint64_t userArg,
+                          std::vector<InferenceProcess::DataPtr> &ofm,
+                          bool failed,
+                          std::vector<uint8_t> &pmuEventConfig,
+                          uint32_t pmuCycleCounterEnable,
+                          std::vector<uint32_t> &pmuEventCount,
+                          uint64_t pmuCycleCounterCount);
 
 private:
     QueueImpl queueIn;

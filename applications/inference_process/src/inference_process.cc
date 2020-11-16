@@ -20,6 +20,7 @@
 #include "tensorflow/lite/micro/cortex_m_generic/debug_log_callback.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
+#include "tensorflow/lite/micro/micro_profiler.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/version.h"
 
@@ -106,10 +107,17 @@ InferenceJob::InferenceJob(const string &_name,
                            const vector<DataPtr> &_input,
                            const vector<DataPtr> &_output,
                            const vector<DataPtr> &_expectedOutput,
-                           size_t _numBytesToPrint) :
+                           size_t _numBytesToPrint,
+                           const vector<uint8_t> &_pmuEventConfig,
+                           const uint32_t pmuCycleCounterEnable) :
     name(_name),
     networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
-    numBytesToPrint(_numBytesToPrint) {}
+    numBytesToPrint(_numBytesToPrint), pmuEventConfig(_pmuEventConfig), pmuCycleCounterEnable(pmuCycleCounterEnable),
+    pmuEventCount(), pmuCycleCounterCount(0) {
+#if defined(INFERENCE_PROC_TFLU_PROFILER) && defined(ETHOSU)
+    pmuEventCount = vector<uint32_t>(ETHOSU_PMU_NCOUNTERS, 0);
+#endif
+}
 
 void InferenceJob::invalidate() {
     networkModel.invalidate();
@@ -183,6 +191,9 @@ bool InferenceProcess::push(const InferenceJob &job) {
 bool InferenceProcess::runJob(InferenceJob &job) {
     printf("Running inference job: %s\n", job.name.c_str());
 
+    // Register debug log callback for profiling
+    RegisterDebugLogCallback(tflu_debug_log);
+
     tflite::MicroErrorReporter microErrorReporter;
     tflite::ErrorReporter *reporter = &microErrorReporter;
 
@@ -197,7 +208,17 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
-    tflite::MicroInterpreter interpreter(model, resolver, inferenceProcessTensorArena, TENSOR_ARENA_SIZE, reporter);
+    tflite::MicroProfiler profiler(reporter);
+
+#if defined(INFERENCE_PROC_TFLU_PROFILER) && defined(ETHOSU)
+    profiler.MonitorEthosuPMUEvents(ethosu_pmu_event_type(job.pmuEventConfig[0]),
+                                    ethosu_pmu_event_type(job.pmuEventConfig[1]),
+                                    ethosu_pmu_event_type(job.pmuEventConfig[2]),
+                                    ethosu_pmu_event_type(job.pmuEventConfig[3]));
+#endif
+
+    tflite::MicroInterpreter interpreter(
+        model, resolver, inferenceProcessTensorArena, TENSOR_ARENA_SIZE, reporter, &profiler);
 
     // Allocate tensors
     TfLiteStatus allocate_status = interpreter.AllocateTensors();
@@ -240,15 +261,28 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         copy(static_cast<char *>(input.data), static_cast<char *>(input.data) + input.size, tensor->data.uint8);
     }
 
-    // Register debug log callback for profiling
-    RegisterDebugLogCallback(tflu_debug_log);
-
     // Run the inference
     TfLiteStatus invoke_status = interpreter.Invoke();
     if (invoke_status != kTfLiteOk) {
         printf("Invoke failed for inference job: %s\n", job.name.c_str());
         return true;
     }
+
+    printf("%s : %zu\r\n", "arena_used_bytes", interpreter.arena_used_bytes());
+
+#ifdef INFERENCE_PROC_TFLU_PROFILER
+    printf("Inference runtime: %u cycles\r\n", (unsigned int)profiler.TotalInferenceTime());
+
+    if (job.pmuCycleCounterEnable != 0) {
+        job.pmuCycleCounterCount = profiler.TotalInferenceTime();
+    }
+
+#ifdef ETHOSU
+    for (uint32_t i = 0; i < ETHOSU_PMU_NCOUNTERS; i++) {
+        job.pmuEventCount[i] = profiler.GetEthosuPMUCounter(i);
+    }
+#endif
+#endif
 
     // Copy output data
     if (job.output.size() > 0) {
@@ -285,7 +319,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     if (job.expectedOutput.size() > 0) {
         if (job.expectedOutput.size() != interpreter.outputs_size()) {
-            printf("Expeded number of output tensors does not match network. job=%s, expected=%zu, network=%zu\n",
+            printf("Expected number of output tensors does not match network. job=%s, expected=%zu, network=%zu\n",
                    job.name.c_str(),
                    job.expectedOutput.size(),
                    interpreter.outputs_size());

@@ -72,7 +72,7 @@ add_library(tflu STATIC IMPORTED)
 set_property(TARGET tflu PROPERTY IMPORTED_LOCATION ${TFLU_GENDIR}/lib/libtensorflow-microlite.a)
 add_dependencies(tflu tflu_gen)
 target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
-target_compile_definitions(tflu INTERFACE TF_LITE_STATIC_MEMORY)
+target_compile_definitions(tflu INTERFACE TF_LITE_MICRO TF_LITE_STATIC_MEMORY)
 
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
     target_link_libraries(tflu INTERFACE ethosu_core_driver)

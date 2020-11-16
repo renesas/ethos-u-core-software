@@ -20,4 +20,13 @@ add_library(ethosu_drivers INTERFACE)
 
 # Mailbox driver
 add_subdirectory(mailbox)
-target_link_libraries(ethosu_drivers INTERFACE mailbox)
+target_link_libraries(ethosu_drivers INTERFACE ethosu_mailbox)
+
+# MHU drivers
+add_subdirectory(mhu_v2)
+add_subdirectory(mhu_juno)
+add_subdirectory(mhu_dummy)
+target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_v2)
+target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_juno)
+target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_dummy)
+

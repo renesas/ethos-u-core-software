@@ -16,7 +16,6 @@
 # limitations under the License.
 #
 
-add_library(mailbox STATIC)
-target_include_directories(mailbox PUBLIC include)
-target_sources(mailbox PRIVATE src/mailbox.cc)
-
+add_library(ethosu_mailbox STATIC)
+target_include_directories(ethosu_mailbox PUBLIC include)
+target_sources(ethosu_mailbox PRIVATE src/mailbox.cc)

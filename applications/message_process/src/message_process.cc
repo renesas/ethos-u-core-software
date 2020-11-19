@@ -54,6 +54,8 @@ bool QueueImpl::read(uint8_t *dst, uint32_t length) {
     const uint8_t *end = dst + length;
     uint32_t rpos      = queue.header.read;
 
+    invalidateHeaderData();
+
     if (length > available()) {
         return false;
     }
@@ -65,9 +67,7 @@ bool QueueImpl::read(uint8_t *dst, uint32_t length) {
 
     queue.header.read = rpos;
 
-#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-    SCB_CleanDCache();
-#endif
+    cleanHeader();
 
     return true;
 }
@@ -78,6 +78,8 @@ bool QueueImpl::write(const Vec *vec, size_t length) {
     for (size_t i = 0; i < length; i++) {
         total += vec[i].length;
     }
+
+    invalidateHeader();
 
     if (total > capacity()) {
         return false;
@@ -98,9 +100,7 @@ bool QueueImpl::write(const Vec *vec, size_t length) {
     // Update the write position last
     queue.header.write = wpos;
 
-#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-    SCB_CleanDCache();
-#endif
+    cleanHeaderData();
 
     return true;
 }
@@ -115,17 +115,43 @@ bool QueueImpl::write(const uint32_t type, const void *src, uint32_t length) {
 bool QueueImpl::skip(uint32_t length) {
     uint32_t rpos = queue.header.read;
 
+    invalidateHeader();
+
     if (length > available()) {
         return false;
     }
 
     queue.header.read = (rpos + length) % queue.header.size;
 
-#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-    SCB_CleanDCache();
-#endif
+    cleanHeader();
 
     return true;
+}
+
+void QueueImpl::cleanHeader() const {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(&queue.header), sizeof(queue.header));
+#endif
+}
+
+void QueueImpl::cleanHeaderData() const {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(&queue.header), sizeof(queue.header));
+    SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(queue.data), queue.header.size);
+#endif
+}
+
+void QueueImpl::invalidateHeader() const {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(&queue.header), sizeof(queue.header));
+#endif
+}
+
+void QueueImpl::invalidateHeaderData() const {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(&queue.header), sizeof(queue.header));
+    SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(queue.data), queue.header.size);
+#endif
 }
 
 MessageProcess::MessageProcess(ethosu_core_queue &in,
@@ -154,10 +180,6 @@ void MessageProcess::handleIrq() {
 
 bool MessageProcess::handleMessage() {
     ethosu_core_msg msg;
-
-#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-    SCB_InvalidateDCache();
-#endif
 
     // Read msg header
     if (!queueIn.read(msg)) {

@@ -78,6 +78,11 @@ public:
     }
 
 private:
+    void cleanHeader() const;
+    void cleanHeaderData() const;
+    void invalidateHeader() const;
+    void invalidateHeaderData() const;
+
     ethosu_core_queue &queue;
 };
 

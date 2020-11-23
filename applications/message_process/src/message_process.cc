@@ -201,7 +201,7 @@ bool MessageProcess::handleMessage() {
             return false;
         }
 
-        printf("InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIu32 ", %" PRIu32 "}",
+        printf("InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIx32 ", %" PRIu32 "}",
                req.user_arg,
                req.network.ptr,
                req.network.size);
@@ -241,8 +241,10 @@ bool MessageProcess::handleMessage() {
         vector<DataPtr> expectedOutput;
 
         InferenceJob job("job", networkModel, ifm, ofm, expectedOutput, -1);
+        job.invalidate();
 
         bool failed = inferenceProcess.runJob(job);
+        job.clean();
 
         sendInferenceRsp(req.user_arg, job.output, failed);
         break;

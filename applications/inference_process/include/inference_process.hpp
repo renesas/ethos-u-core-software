@@ -29,6 +29,9 @@ struct DataPtr {
     size_t size;
 
     DataPtr(void *data = nullptr, size_t size = 0);
+
+    void invalidate();
+    void clean();
 };
 
 struct InferenceJob {
@@ -46,6 +49,9 @@ struct InferenceJob {
                  const std::vector<DataPtr> &output,
                  const std::vector<DataPtr> &expectedOutput,
                  size_t numBytesToPrint);
+
+    void invalidate();
+    void clean();
 };
 
 class InferenceProcess {

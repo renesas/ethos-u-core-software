@@ -87,6 +87,20 @@ bool copyOutput(const TfLiteTensor &src, InferenceProcess::DataPtr &dst) {
 namespace InferenceProcess {
 DataPtr::DataPtr(void *_data, size_t _size) : data(_data), size(_size) {}
 
+void DataPtr::invalidate() {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    printf("Invalidate. data=%p, size=%zu\n", data, size);
+    SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
+#endif
+}
+
+void DataPtr::clean() {
+#if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
+    printf("Clean. data=%p, size=%zu\n", data, size);
+    SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
+#endif
+}
+
 InferenceJob::InferenceJob() : numBytesToPrint(0) {}
 
 InferenceJob::InferenceJob(const string &_name,
@@ -98,6 +112,38 @@ InferenceJob::InferenceJob(const string &_name,
     name(_name),
     networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
     numBytesToPrint(_numBytesToPrint) {}
+
+void InferenceJob::invalidate() {
+    networkModel.invalidate();
+
+    for (auto &it : input) {
+        it.invalidate();
+    }
+
+    for (auto &it : output) {
+        it.invalidate();
+    }
+
+    for (auto &it : expectedOutput) {
+        it.invalidate();
+    }
+}
+
+void InferenceJob::clean() {
+    networkModel.clean();
+
+    for (auto &it : input) {
+        it.clean();
+    }
+
+    for (auto &it : output) {
+        it.clean();
+    }
+
+    for (auto &it : expectedOutput) {
+        it.clean();
+    }
+}
 
 InferenceProcess::InferenceProcess() : lock(0) {}
 

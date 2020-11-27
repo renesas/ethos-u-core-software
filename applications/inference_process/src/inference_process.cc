@@ -89,14 +89,12 @@ DataPtr::DataPtr(void *_data, size_t _size) : data(_data), size(_size) {}
 
 void DataPtr::invalidate() {
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-    printf("Invalidate. data=%p, size=%zu\n", data, size);
     SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
 #endif
 }
 
 void DataPtr::clean() {
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
-    printf("Clean. data=%p, size=%zu\n", data, size);
     SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
 #endif
 }

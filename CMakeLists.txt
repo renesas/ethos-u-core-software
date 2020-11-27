@@ -38,6 +38,15 @@ set_property(CACHE CORE_SOFTWARE_ACCELERATOR PROPERTY STRINGS CPU CMSIS-NN NPU)
 set(CORE_SOFTWARE_RTOS "None" CACHE STRING "Select RTOS to include. (None, MbedOS, FreeRTOS, Zephyr)")
 string(TOLOWER ${CORE_SOFTWARE_RTOS} CORE_SOFTWARE_RTOS_LOWER)
 
+# Set trustzone options
+set(TRUSTZONE_BUILD OFF CACHE BOOL "Enable TrustZone build")
+if (TRUSTZONE_BUILD)
+    set(TRUSTZONE_SIDE "secure" CACHE STRING "Select secure or nonsecure")
+    set_property(CACHE TRUSTZONE_SIDE PROPERTY STRINGS secure nonsecure)
+    set(TRUSTZONE_PARTITION_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" CACHE
+        FILEPATH "Path to CMSIS partion header for device")
+endif()
+
 #
 # Build
 #
@@ -45,6 +54,7 @@ add_library(ethosu_core INTERFACE)
 
 # Build CMSIS
 include(cmsis.cmake)
+target_link_libraries(ethosu_core INTERFACE cmsis_core cmsis_device)
 
 # Build core driver
 if (CORE_SOFTWARE_ACCELERATOR STREQUAL "NPU")

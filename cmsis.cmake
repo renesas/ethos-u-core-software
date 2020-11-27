@@ -43,15 +43,41 @@ target_include_directories(cmsis_core INTERFACE ${CMSIS_PATH}/CMSIS/Core/Include
 # CMSIS device
 add_library(cmsis_device INTERFACE)
 target_include_directories(cmsis_device INTERFACE ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
+if (TRUSTZONE_BUILD)
+    # Use Cortex-M Secure Extension when compiling
+    target_compile_options(cmsis_device INTERFACE -mcmse)
+    target_compile_definitions(cmsis_device INTERFACE TRUSTZONE_BUILD)
+    if (TRUSTZONE_SIDE STREQUAL secure)
+        target_compile_definitions(cmsis_device INTERFACE TRUSTZONE_SECURE)
+    else()
+        target_compile_definitions(cmsis_device INTERFACE TRUSTZONE_NONSECURE)
+    endif()
+endif()
 target_compile_options(cmsis_device INTERFACE -include${ARM_CPU}${ARM_FEATURES}.h)
 target_link_libraries(cmsis_device INTERFACE cmsis_core)
 
 # CMSIS startup
-add_library(cmsis_startup STATIC
-    ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c
-    ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/system_${ARM_CPU}.c)
+add_library(cmsis_startup STATIC)
+if (TRUSTZONE_BUILD)
+    if (TRUSTZONE_SIDE STREQUAL secure)
+        target_sources(cmsis_startup PRIVATE
+            ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c
+            ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/system_${ARM_CPU}.c)
+        # Bring in the partion header
+        target_include_directories(cmsis_startup PRIVATE ${TRUSTZONE_PARTITION_DIRECTORY})
+    elseif(TRUSTZONE_SIDE STREQUAL nonsecure)
+        target_sources(cmsis_startup PRIVATE
+            ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c)
+    endif()
+else()
+    target_sources(cmsis_startup PRIVATE
+        ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c
+        ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/system_${ARM_CPU}.c)
+endif()
+
 set_source_files_properties(${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c PROPERTIES COMPILE_FLAGS
     -Wno-redundant-decls)
+
 target_compile_definitions(cmsis_startup PRIVATE ${ARM_CPU}${ARM_FEATURES})
 target_link_libraries(cmsis_startup PRIVATE cmsis_device)
 

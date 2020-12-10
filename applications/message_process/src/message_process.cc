@@ -240,7 +240,7 @@ bool MessageProcess::handleMessage() {
 
         vector<DataPtr> expectedOutput;
 
-        vector<uint8_t> pmuEventConfig;
+        vector<uint8_t> pmuEventConfig(ETHOSU_CORE_PMU_MAX);
         for (uint32_t i = 0; i < ETHOSU_CORE_PMU_MAX; i++) {
             pmuEventConfig[i] = req.pmu_event_config[i];
         }

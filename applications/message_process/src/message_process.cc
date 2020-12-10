@@ -30,7 +30,9 @@ using namespace InferenceProcess;
 
 namespace MessageProcess {
 
-QueueImpl::QueueImpl(ethosu_core_queue &_queue) : queue(_queue) {}
+QueueImpl::QueueImpl(ethosu_core_queue &_queue) : queue(_queue) {
+    cleanHeaderData();
+}
 
 bool QueueImpl::empty() const {
     return queue.header.read == queue.header.write;

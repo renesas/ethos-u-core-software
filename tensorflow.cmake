@@ -34,7 +34,8 @@ set(TFLU_TARGET_TOOLCHAIN_ROOT "${TFLU_TARGET_TOOLCHAIN_ROOT}/")
 set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
 set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
 set(TFLU_TARGET "cortex_m_generic")
-set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES})
+set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}
+    CACHE STRING "Tensorflow Lite for Microcontrollers target architecture")
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
 set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro optimization level")
 

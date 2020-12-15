@@ -18,11 +18,18 @@
 
 add_library(ethosu_drivers INTERFACE)
 
+#############################################################################
 # Mailbox driver
+#############################################################################
 add_subdirectory(mailbox)
 target_link_libraries(ethosu_drivers INTERFACE ethosu_mailbox)
 
+#############################################################################
 # MHU drivers
+#############################################################################
+# NOTE: These are all built and linked from a CMake perspective. However the
+#       application code can instantiate one or more of the drivers. The
+#       one(s) not used will later be removed by the linker.
 add_subdirectory(mhu_v2)
 add_subdirectory(mhu_juno)
 add_subdirectory(mhu_dummy)
@@ -30,3 +37,9 @@ target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_v2)
 target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_juno)
 target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_dummy)
 
+#############################################################################
+# UART drivers
+#############################################################################
+# NOTE: All UART drivers are built, however a platform application should
+#       link the appropriate driver target (see drivers/uart/CMakeLists.txt).
+add_subdirectory(uart)

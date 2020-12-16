@@ -44,13 +44,14 @@ target_include_directories(cmsis_core INTERFACE ${CMSIS_PATH}/CMSIS/Core/Include
 add_library(cmsis_device INTERFACE)
 target_include_directories(cmsis_device INTERFACE ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
 target_compile_options(cmsis_device INTERFACE -include${ARM_CPU}${ARM_FEATURES}.h)
+target_link_libraries(cmsis_device INTERFACE cmsis_core)
 
 # CMSIS startup
 add_library(cmsis_startup STATIC
     ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/startup_${ARM_CPU}.c
     ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Source/system_${ARM_CPU}.c)
 target_compile_definitions(cmsis_startup PRIVATE ${ARM_CPU}${ARM_FEATURES})
-target_link_libraries(cmsis_startup PRIVATE cmsis_device cmsis_core)
+target_link_libraries(cmsis_startup PRIVATE cmsis_device)
 
 # Install libraries
 install(TARGETS cmsis_startup LIBRARY DESTINATION "lib")

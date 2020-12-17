@@ -122,6 +122,7 @@ unsigned int GetLine(char *lp, unsigned int len) {
             lp++;  /* increment line pointer         */
             cnt++; /* and count                      */
             c = LF;
+            /* fall through */
         default:
             UartPutc(*lp = c); /* echo and store character       */
             fflush(stdout);

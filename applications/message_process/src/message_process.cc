@@ -139,7 +139,8 @@ void QueueImpl::cleanHeader() const {
 void QueueImpl::cleanHeaderData() const {
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(&queue.header), sizeof(queue.header));
-    SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(queue.data), queue.header.size);
+    uintptr_t queueDataPtr = reinterpret_cast<uintptr_t>(&queue.data[0]);
+    SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(queueDataPtr & ~3), queue.header.size + (queueDataPtr & 3));
 #endif
 }
 
@@ -152,7 +153,9 @@ void QueueImpl::invalidateHeader() const {
 void QueueImpl::invalidateHeaderData() const {
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(&queue.header), sizeof(queue.header));
-    SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(queue.data), queue.header.size);
+    uintptr_t queueDataPtr = reinterpret_cast<uintptr_t>(&queue.data[0]);
+    SCB_InvalidateDCache_by_Addr(reinterpret_cast<uint32_t *>(queueDataPtr & ~3),
+                                 queue.header.size + (queueDataPtr & 3));
 #endif
 }
 

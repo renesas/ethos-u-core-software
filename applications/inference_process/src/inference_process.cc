@@ -109,10 +109,10 @@ InferenceJob::InferenceJob(const string &_name,
                            const vector<DataPtr> &_expectedOutput,
                            size_t _numBytesToPrint,
                            const vector<uint8_t> &_pmuEventConfig,
-                           const uint32_t pmuCycleCounterEnable) :
+                           const uint32_t _pmuCycleCounterEnable) :
     name(_name),
     networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
-    numBytesToPrint(_numBytesToPrint), pmuEventConfig(_pmuEventConfig), pmuCycleCounterEnable(pmuCycleCounterEnable),
+    numBytesToPrint(_numBytesToPrint), pmuEventConfig(_pmuEventConfig), pmuCycleCounterEnable(_pmuCycleCounterEnable),
     pmuEventCount(), pmuCycleCounterCount(0) {
 #if defined(INFERENCE_PROC_TFLU_PROFILER) && defined(ETHOSU)
     pmuEventCount = vector<uint32_t>(ETHOSU_PMU_NCOUNTERS, 0);

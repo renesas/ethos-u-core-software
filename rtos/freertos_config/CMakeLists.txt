@@ -43,6 +43,9 @@ set(FREERTOS_CONFIG_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR})
 # FreeRTOS kernel library
 add_library(freertos_kernel STATIC)
 
+target_compile_options(freertos_kernel PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:${TOOLCHAIN_CXX_OPTIONS}> "-Wno-redundant-decls")
+
 # Set include directories
 target_include_directories(freertos_kernel PUBLIC
     ${FREERTOS_KERNEL_PATH}/include

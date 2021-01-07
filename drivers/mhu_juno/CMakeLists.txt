@@ -19,5 +19,5 @@
 add_library(ethosu_mhu_juno STATIC)
 target_include_directories(ethosu_mhu_juno PUBLIC include)
 
-target_sources(ethosu_mhu_juno PRIVATE src/mhu_juno.cc)
+target_sources(ethosu_mhu_juno PRIVATE src/mhu_juno.cpp)
 target_link_libraries(ethosu_mhu_juno PRIVATE ethosu_mailbox)

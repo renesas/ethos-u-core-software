@@ -19,5 +19,5 @@
 add_library(ethosu_mhu_dummy STATIC)
 target_include_directories(ethosu_mhu_dummy PUBLIC include)
 
-target_sources(ethosu_mhu_dummy PRIVATE src/mhu_dummy.cc)
+target_sources(ethosu_mhu_dummy PRIVATE src/mhu_dummy.cpp)
 target_link_libraries(ethosu_mhu_dummy PRIVATE ethosu_mailbox)

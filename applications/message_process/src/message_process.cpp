@@ -27,6 +27,7 @@
 
 using namespace std;
 using namespace InferenceProcess;
+using namespace EthosU;
 
 namespace MessageProcess {
 

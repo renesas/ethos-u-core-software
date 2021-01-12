@@ -31,13 +31,13 @@ namespace MessageProcess {
 
 template <uint32_t SIZE>
 struct Queue {
-    ethosu_core_queue_header header;
+    EthosU::ethosu_core_queue_header header;
     uint8_t data[SIZE];
 
     constexpr Queue() : header({SIZE, 0, 0}) {}
 
-    constexpr ethosu_core_queue *toQueue() {
-        return reinterpret_cast<ethosu_core_queue *>(&header);
+    constexpr EthosU::ethosu_core_queue *toQueue() {
+        return reinterpret_cast<EthosU::ethosu_core_queue *>(&header);
     }
 };
 
@@ -48,7 +48,7 @@ public:
         size_t length;
     };
 
-    QueueImpl(ethosu_core_queue &queue);
+    QueueImpl(EthosU::ethosu_core_queue &queue);
 
     bool empty() const;
     size_t available() const;
@@ -73,20 +73,20 @@ private:
     void invalidateHeader() const;
     void invalidateHeaderData() const;
 
-    ethosu_core_queue &queue;
+    EthosU::ethosu_core_queue &queue;
 };
 
 class MessageProcess {
 public:
-    MessageProcess(ethosu_core_queue &in,
-                   ethosu_core_queue &out,
+    MessageProcess(EthosU::ethosu_core_queue &in,
+                   EthosU::ethosu_core_queue &out,
                    Mailbox::Mailbox &mbox,
                    InferenceProcess::InferenceProcess &inferenceProcess);
 
     void run();
     bool handleMessage();
     void sendPong();
-    void sndErrorRspAndResetQueue(ethosu_core_msg_err_type type, const char *message);
+    void sndErrorRspAndResetQueue(EthosU::ethosu_core_msg_err_type type, const char *message);
     void sendVersionRsp();
     void sendInferenceRsp(uint64_t userArg,
                           std::vector<InferenceProcess::DataPtr> &ofm,

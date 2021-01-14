@@ -53,28 +53,18 @@ public:
     bool empty() const;
     size_t available() const;
     size_t capacity() const;
+    void reset();
     bool read(uint8_t *dst, uint32_t length);
     bool write(const Vec *vec, size_t length);
     bool write(const uint32_t type, const void *src = nullptr, uint32_t length = 0);
-    bool skip(uint32_t length);
+    template <typename T>
+    bool write(const uint32_t type, const T &src) {
+        return write(type, reinterpret_cast<const void *>(&src), sizeof(src));
+    }
 
     template <typename T>
     bool read(T &dst) {
         return read(reinterpret_cast<uint8_t *>(&dst), sizeof(dst));
-    }
-
-    template <typename T>
-    bool readOrSkip(T &dst, uint32_t expectedLength) {
-        if (expectedLength == sizeof(dst)) {
-            return read(reinterpret_cast<uint8_t *>(&dst), sizeof(dst));
-        } else {
-            return skip(expectedLength);
-        }
-    }
-
-    template <typename T>
-    bool write(const uint32_t type, const T &src) {
-        return write(type, reinterpret_cast<const void *>(&src), sizeof(src));
     }
 
 private:
@@ -96,6 +86,8 @@ public:
     void run();
     bool handleMessage();
     void sendPong();
+    void sndErrorRspAndResetQueue(ethosu_core_msg_err_type type, const char *message);
+    void sendVersionRsp();
     void sendInferenceRsp(uint64_t userArg,
                           std::vector<InferenceProcess::DataPtr> &ofm,
                           bool failed,

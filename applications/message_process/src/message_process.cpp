@@ -108,26 +108,17 @@ bool QueueImpl::write(const Vec *vec, size_t length) {
 }
 
 bool QueueImpl::write(const uint32_t type, const void *src, uint32_t length) {
-    ethosu_core_msg msg = {type, length};
+    ethosu_core_msg msg = {ETHOSU_CORE_MSG_MAGIC, type, length};
     Vec vec[2]          = {{&msg, sizeof(msg)}, {src, length}};
 
     return write(vec, 2);
 }
 
-bool QueueImpl::skip(uint32_t length) {
-    uint32_t rpos = queue.header.read;
-
+// Skip to magic or end of queue
+void QueueImpl::reset() {
     invalidateHeader();
-
-    if (length > available()) {
-        return false;
-    }
-
-    queue.header.read = (rpos + length) % queue.header.size;
-
+    queue.header.read = queue.header.write;
     cleanHeader();
-
-    return true;
 }
 
 void QueueImpl::cleanHeader() const {
@@ -186,27 +177,53 @@ void MessageProcess::handleIrq() {
 bool MessageProcess::handleMessage() {
     ethosu_core_msg msg;
 
-    // Read msg header
-    if (!queueIn.read(msg)) {
+    if (queueIn.available() == 0) {
         return false;
     }
 
-    printf("Message. type=%" PRIu32 ", length=%" PRIu32 "\n", msg.type, msg.length);
+    // Read msg header
+    // Only process a complete message header, else send error message
+    // and reset queue
+    if (!queueIn.read(msg)) {
+        sndErrorRspAndResetQueue(ETHOSU_CORE_MSG_ERR_INVALID_SIZE, "Failed to read a complete header");
+        return false;
+    }
+
+    printf("Msg: header magic=%" PRIX32 ", type=%" PRIu32 ", length=%" PRIu32 "\n", msg.magic, msg.type, msg.length);
+
+    if (msg.magic != ETHOSU_CORE_MSG_MAGIC) {
+        sndErrorRspAndResetQueue(ETHOSU_CORE_MSG_ERR_INVALID_MAGIC, "Invalid magic");
+        return false;
+    }
 
     switch (msg.type) {
     case ETHOSU_CORE_MSG_PING:
-        printf("Ping\n");
+        printf("Msg: Ping\n");
         sendPong();
+        break;
+    case ETHOSU_CORE_MSG_ERR: {
+        struct ethosu_core_msg_err error = {0};
+        if (!queueIn.read(error)) {
+            printf("ERROR: Msg: Failed to receive error message\n");
+        } else {
+            printf("Msg: Received an error response, type=%" PRIu32 ", msg=\"%s\"\n", error.type, error.msg);
+        }
+        queueIn.reset();
+        return false;
+    }
+    case ETHOSU_CORE_MSG_VERSION_REQ:
+        printf("Msg: Version request\n");
+        sendVersionRsp();
         break;
     case ETHOSU_CORE_MSG_INFERENCE_REQ: {
         ethosu_core_inference_req req;
 
-        if (!queueIn.readOrSkip(req, msg.length)) {
-            printf("Failed to read payload.\n");
+        if (!queueIn.read(req)) {
+            sndErrorRspAndResetQueue(ETHOSU_CORE_MSG_ERR_INVALID_PAYLOAD, "InferenceReq. Failed to read payload");
             return false;
         }
 
-        printf("InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIx32 ", %" PRIu32 "}",
+        printf("Msg: InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIx32 ", %" PRIu32 "}",
                req.user_arg,
                req.network.ptr,
                req.network.size);
@@ -267,19 +284,56 @@ bool MessageProcess::handleMessage() {
         break;
     }
     default: {
-        printf("Unexpected message type: %" PRIu32 ", skipping %" PRIu32 " bytes\n", msg.type, msg.length);
-
-        queueIn.skip(msg.length);
-    } break;
+        char errMsg[128] = {0};
+        snprintf(&errMsg[0],
+                 sizeof(errMsg),
+                 "Msg: Unknown type: %" PRIu32 " with payload length %" PRIu32 " bytes\n",
+                 msg.type,
+                 msg.length);
+        sndErrorRspAndResetQueue(ETHOSU_CORE_MSG_ERR_UNSUPPORTED_TYPE, errMsg);
+        return false;
     }
-
+    }
     return true;
 }
 
 void MessageProcess::sendPong() {
     if (!queueOut.write(ETHOSU_CORE_MSG_PONG)) {
-        printf("Failed to write pong.\n");
+        printf("ERROR: Msg: Failed to write pong response. No mailbox message sent\n");
+    } else {
+        mailbox.sendMessage();
     }
+}
+
+void MessageProcess::sendVersionRsp() {
+    struct ethosu_core_msg_version ver = {.major     = ETHOSU_CORE_MSG_VERSION_MAJOR,
+                                          .minor     = ETHOSU_CORE_MSG_VERSION_MINOR,
+                                          .patch     = ETHOSU_CORE_MSG_VERSION_PATCH,
+                                          ._reserved = 0};
+
+    if (!queueOut.write(ETHOSU_CORE_MSG_VERSION_RSP, ver)) {
+        printf("ERROR: Failed to write version response. No mailbox message sent\n");
+    } else {
+        mailbox.sendMessage();
+    }
+}
+
+void MessageProcess::sndErrorRspAndResetQueue(ethosu_core_msg_err_type type, const char *message) {
+    ethosu_core_msg_err error = {0};
+    error.type                = type;
+    unsigned int i            = 0;
+
+    if (message) {
+        for (; i < (sizeof(error.msg) - 1) && message[i]; i++) {
+            error.msg[i] = message[i];
+        }
+    }
+    printf("ERROR: Msg: \"%s\"\n", message);
+    if (!queueOut.write(ETHOSU_CORE_MSG_ERR, &error)) {
+        printf("ERROR: Msg: Failed to write error response. No mailbox message sent\n");
+        return;
+    }
+    queueIn.reset();
     mailbox.sendMessage();
 }
 
@@ -320,9 +374,10 @@ void MessageProcess::sendInferenceRsp(uint64_t userArg,
            rsp.status);
 
     if (!queueOut.write(ETHOSU_CORE_MSG_INFERENCE_RSP, rsp)) {
-        printf("Failed to write inference.\n");
+        printf("ERROR: Msg: Failed to write inference response. No mailbox message sent\n");
+    } else {
+        mailbox.sendMessage();
     }
-    mailbox.sendMessage();
 }
 
 void MessageProcess::mailboxCallback(void *userArg) {

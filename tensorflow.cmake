@@ -27,7 +27,6 @@ else ()
     message(FATAL_ERROR "No compiler ID is set")
 endif()
 
-
 get_filename_component(TFLU_TARGET_TOOLCHAIN_ROOT ${CMAKE_C_COMPILER} DIRECTORY)
 
 set(TFLU_TARGET_TOOLCHAIN_ROOT "${TFLU_TARGET_TOOLCHAIN_ROOT}/")
@@ -42,13 +41,11 @@ set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro optimization lev
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
     set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
     # Set preference for ethos-u over cmsis-nn
-    list(APPEND TFLU_TAGS "cmsis-nn")
-    list(APPEND TFLU_TAGS "ethos-u")
+    set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
+    set(TFLU_CO_PROCESSOR "ethos_u")
 elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
-    list(APPEND TFLU_TAGS "cmsis-nn")
+    set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
 endif()
-
-string(JOIN TFLU_TAGS " " TFLU_TAGS)
 
 # Command and target
 add_custom_target(tflu_gen ALL
@@ -58,7 +55,8 @@ add_custom_target(tflu_gen ALL
                           GENDIR=${TFLU_GENDIR}
                           TARGET=${TFLU_TARGET}
                           TARGET_ARCH=${TFLU_TARGET_ARCH}
-                          TAGS="${TFLU_TAGS}"
+                          OPTIMIZED_KERNEL_DIR="${TFLU_OPTIMIZED_KERNEL_DIR}"
+                          CO_PROCESSOR="${TFLU_CO_PROCESSOR}"
                           $<$<BOOL:${FLOAT}>:FLOAT=${FLOAT}>
                           BUILD_TYPE=${TFLU_BUILD_TYPE}
                           $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>

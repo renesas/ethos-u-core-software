@@ -16,11 +16,8 @@
 # limitations under the License.
 #
 
-add_library(ethosu_core_rtos INTERFACE)
-
-# Include FreeRTOS kernel & link with ethosu_rtos target
-if(CORE_SOFTWARE_RTOS_LOWER STREQUAL "freertos")
+# Include FreeRTOS kernel
+if(CORE_SOFTWARE_RTOS_LOWER STREQUAL "freertos" OR CORE_SOFTWARE_RTOS_LOWER STREQUAL "all")
     set(FREERTOS_KERNEL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/freertos/freertos_kernel" CACHE PATH "Path to FreeRTOS kernel.")
     add_subdirectory(freertos_config)
-    target_link_libraries(ethosu_core_rtos INTERFACE freertos_kernel)
 endif()

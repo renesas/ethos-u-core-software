@@ -68,7 +68,6 @@ include(tensorflow.cmake)
 
 # Build RTOS
 add_subdirectory(rtos)
-target_link_libraries(ethosu_core INTERFACE ethosu_core_rtos)
 
 # Build applications
 add_subdirectory(applications)

@@ -35,10 +35,14 @@ QueueImpl::QueueImpl(ethosu_core_queue &_queue) : queue(_queue) {
 }
 
 bool QueueImpl::empty() const {
+    invalidateHeaderData();
+
     return queue.header.read == queue.header.write;
 }
 
 size_t QueueImpl::available() const {
+    invalidateHeaderData();
+
     size_t avail = queue.header.write - queue.header.read;
 
     if (queue.header.read > queue.header.write) {
@@ -54,13 +58,13 @@ size_t QueueImpl::capacity() const {
 
 bool QueueImpl::read(uint8_t *dst, uint32_t length) {
     const uint8_t *end = dst + length;
-    uint32_t rpos      = queue.header.read;
 
-    invalidateHeaderData();
-
+    // Available will invalidate the cache
     if (length > available()) {
         return false;
     }
+
+    uint32_t rpos = queue.header.read;
 
     while (dst < end) {
         *dst++ = queue.data[rpos];

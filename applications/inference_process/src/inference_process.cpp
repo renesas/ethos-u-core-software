@@ -200,7 +200,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
-    tflite::MicroProfiler profiler(reporter);
+    tflite::MicroProfiler profiler;
 
 #if defined(INFERENCE_PROC_TFLU_PROFILER) && defined(ETHOSU)
     profiler.MonitorEthosuPMUEvents(ethosu_pmu_event_type(job.pmuEventConfig[0]),
@@ -260,10 +260,10 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     printf("%s : %zu\r\n", "arena_used_bytes", interpreter.arena_used_bytes());
 
 #ifdef INFERENCE_PROC_TFLU_PROFILER
-    printf("Inference runtime: %u cycles\r\n", (unsigned int)profiler.TotalInferenceTime());
+    printf("Inference runtime: %u cycles\r\n", (unsigned int)profiler.GetTotalTicks());
 
     if (job.pmuCycleCounterEnable != 0) {
-        job.pmuCycleCounterCount = profiler.TotalInferenceTime();
+        job.pmuCycleCounterCount = profiler.GetTotalTicks();
     }
 
 #ifdef ETHOSU

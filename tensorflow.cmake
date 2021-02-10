@@ -73,6 +73,10 @@ add_dependencies(tflu tflu_gen)
 target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
 target_compile_definitions(tflu INTERFACE TF_LITE_MICRO TF_LITE_STATIC_MEMORY)
 
+if(${TFLU_BUILD_TYPE} STREQUAL "release")
+    target_compile_definitions(tflu INTERFACE TF_LITE_STRIP_ERROR_STRINGS)
+endif()
+
 if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
     target_link_libraries(tflu INTERFACE ethosu_core_driver)
 endif()

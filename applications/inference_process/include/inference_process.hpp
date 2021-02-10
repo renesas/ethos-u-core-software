@@ -63,7 +63,8 @@ struct InferenceJob {
 
 class InferenceProcess {
 public:
-    InferenceProcess();
+    InferenceProcess(uint8_t *_tensorArena, size_t _tensorArenaSize) :
+        lock(0), tensorArena(_tensorArena), tensorArenaSize(_tensorArenaSize) {}
 
     bool push(const InferenceJob &job);
     bool runJob(InferenceJob &job);
@@ -71,6 +72,8 @@ public:
 
 private:
     volatile uint32_t lock;
+    uint8_t *tensorArena;
+    const size_t tensorArenaSize;
     std::queue<InferenceJob> inferenceJobQueue;
 
     void getLock();

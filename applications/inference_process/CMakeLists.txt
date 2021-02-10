@@ -16,14 +16,11 @@
 # limitations under the License.
 #
 
-set(TR_ARENA_SIZE "200000" CACHE STRING "Arena size.")
 set(TR_PRINT_OUTPUT_BYTES "" CACHE STRING "Print output data.")
 
 add_library(inference_process STATIC)
+
 target_include_directories(inference_process PUBLIC include
                            PRIVATE ${TENSORFLOW_PATH} ${TENSORFLOW_PATH}/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include)
 target_link_libraries(inference_process PUBLIC tflu cmsis_core cmsis_device)
 target_sources(inference_process PRIVATE src/inference_process.cpp)
-
-# Set arena size
-target_compile_definitions(inference_process PRIVATE TENSOR_ARENA_SIZE=${TR_ARENA_SIZE})

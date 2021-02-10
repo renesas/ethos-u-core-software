@@ -30,13 +30,7 @@
 
 #include <inttypes.h>
 
-#ifndef TENSOR_ARENA_SIZE
-#define TENSOR_ARENA_SIZE (1024)
-#endif
-
 using namespace std;
-
-__attribute__((section(".bss.NoInit"), aligned(16))) uint8_t inferenceProcessTensorArena[TENSOR_ARENA_SIZE];
 
 namespace {
 
@@ -151,8 +145,6 @@ void InferenceJob::clean() {
     }
 }
 
-InferenceProcess::InferenceProcess() : lock(0) {}
-
 // NOTE: Adding code for get_lock & free_lock with some corrections from
 // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0321a/BIHEJCHB.html
 // TODO: check correctness?
@@ -216,9 +208,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
                                     ethosu_pmu_event_type(job.pmuEventConfig[2]),
                                     ethosu_pmu_event_type(job.pmuEventConfig[3]));
 #endif
-
-    tflite::MicroInterpreter interpreter(
-        model, resolver, inferenceProcessTensorArena, TENSOR_ARENA_SIZE, reporter, &profiler);
+    tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, reporter, &profiler);
 
     // Allocate tensors
     TfLiteStatus allocate_status = interpreter.AllocateTensors();
@@ -236,7 +226,6 @@ bool InferenceProcess::runJob(InferenceJob &job) {
             inputTensors.push_back(tensor);
         }
     }
-
     if (job.input.size() != inputTensors.size()) {
         printf("Number of input buffers does not match number of non empty network tensors. input=%zu, network=%zu\n",
                job.input.size(),

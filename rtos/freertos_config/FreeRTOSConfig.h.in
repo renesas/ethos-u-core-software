@@ -29,7 +29,7 @@
 #define configCPU_CLOCK_HZ                              @SYSTEM_CORE_CLOCK@
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION         0
 #define configUSE_PREEMPTION                            1
-#define configUSE_TIME_SLICING                          1
+#define configUSE_TIME_SLICING                          0
 #define configMAX_PRIORITIES                            5
 #define configIDLE_SHOULD_YIELD                         1
 #define configUSE_16_BIT_TICKS                          0

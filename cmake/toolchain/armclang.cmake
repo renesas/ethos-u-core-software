@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -24,6 +24,7 @@ set(__TOOLCHAIN_LOADED TRUE)
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_C_COMPILER "armclang")
 set(CMAKE_CXX_COMPILER "armclang")
+set(CMAKE_ASM_COMPILER "armclang")
 set(CMAKE_SYSTEM_PROCESSOR "cortex-m33+nodsp" CACHE STRING "Select Cortex-M architure. (cortex-m0, cortex-m3, cortex-m33, cortex-m4, cortex-m55, cortex-m7, etc)")
 
 set(CMAKE_C_STANDARD 99)
@@ -40,7 +41,9 @@ if(__OFFSET GREATER_EQUAL 0)
 endif()
 
 # Add -mcpu to the compile options to override the -mcpu the CMake toolchain adds
-add_compile_options(-mcpu=${__CPU_COMPILE_TARGET})
+add_compile_options(
+    -mcpu=${__CPU_COMPILE_TARGET}
+    "$<$<COMPILE_LANGUAGE:ASM>:-masm=auto;--target=arm-arm-none-eabi>")
 
 # Set floating point unit
 if("${__CPU_COMPILE_TARGET}" MATCHES "\\+fp")
@@ -48,7 +51,9 @@ if("${__CPU_COMPILE_TARGET}" MATCHES "\\+fp")
 elseif("${__CPU_COMPILE_TARGET}" MATCHES "\\+nofp")
     set(FLOAT soft)
 elseif("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m33" OR
-       "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m55")
+       "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m4" OR
+       "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m55" OR
+       "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "cortex-m7")
     set(FLOAT hard)
 else()
     set(FLOAT soft)
@@ -78,8 +83,22 @@ add_link_options(--lto --info common,debug,sizes,totals,veneers,unused --symbols
 #
 
 add_compile_options(-Wall -Wextra
-                    -Wsign-compare -Wunused -Wswitch-default -Wformat -Wdouble-promotion -Wredundant-decls -Wshadow -Wcast-align -Wnull-dereference
-                    -Wno-format-extra-args -Wno-unused-function -Wno-unused-label -Wno-missing-field-initializers -Wno-return-type)
+                    -Wsign-compare
+                    -Wunused
+                    -Wswitch-default
+                    -Wformat
+                    -Wdouble-promotion
+                    -Wredundant-decls
+                    -Wshadow
+                    -Wcast-align
+                    -Wnull-dereference
+                    -Wno-deprecated-register
+                    -Wno-format-extra-args
+                    -Wno-missing-field-initializers
+                    -Wno-unused-function
+                    -Wno-unused-label
+                    -Wno-unused-parameter
+                    -Wno-return-type)
 add_compile_options(-fno-unwind-tables -fno-rtti -fno-exceptions)
 add_compile_options(-mthumb)
 add_compile_options("$<$<CONFIG:DEBUG>:-gdwarf-3>")

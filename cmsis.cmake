@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -44,7 +44,9 @@ target_include_directories(cmsis_core INTERFACE ${CMSIS_PATH}/CMSIS/Core/Include
 add_library(cmsis_device INTERFACE)
 target_include_directories(cmsis_device INTERFACE ${CMSIS_PATH}/Device/ARM/${ARM_CPU}/Include)
 
-target_compile_options(cmsis_device INTERFACE -include${ARM_CPU}${ARM_FEATURES}.h)
+target_compile_options(cmsis_device INTERFACE
+    "$<$<COMPILE_LANGUAGE:C>:-include${ARM_CPU}${ARM_FEATURES}.h>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-include${ARM_CPU}${ARM_FEATURES}.h>")
 target_link_libraries(cmsis_device INTERFACE cmsis_core)
 
 # CMSIS startup

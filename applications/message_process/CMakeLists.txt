@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -18,4 +18,4 @@
 
 add_library(message_process STATIC src/message_process.cpp)
 target_include_directories(message_process PUBLIC include ${LINUX_DRIVER_STACK_PATH}/kernel)
-target_link_libraries(message_process PRIVATE cmsis_core inference_process ethosu_mailbox)
+target_link_libraries(message_process PRIVATE cmsis_device inference_process ethosu_mailbox)

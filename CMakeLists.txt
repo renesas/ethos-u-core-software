@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -67,4 +67,4 @@ add_subdirectory(applications)
 add_subdirectory(drivers)
 
 # Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu cmsis_core ethosu_applications ethosu_drivers)
+target_link_libraries(ethosu_core INTERFACE tflu ethosu_applications ethosu_drivers)

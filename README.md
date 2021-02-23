@@ -1,9 +1,9 @@
-# Ethos-U core software
+# Arm(R) Ethos(TM)-U core software
 
 ## Building
 
-The core software is built with CMake. It is recommended to build out of tree
-like illustrated below.
+The Arm(R) Ethos(TM)-U core software is built with CMake. It is recommended to
+build out of tree like illustrated below.
 
 ```
 $ mkdir build
@@ -14,14 +14,9 @@ $ make
 
 Available build options can be listed with `cmake -LH ..`.
 
-Supported CPU targets are any of the Cortex-M processors with any of the
+Supported CPU targets are any of the Cortex(R)-M processors with any of the
 supported features, for example cortex-m33+nodsp+nofp. A toolchain file is
 required to cross compile the software.
-
-# License
-
-The Arm Ethos-U Core Software is provided under an Apache-2.0 license. Please
-see [LICENSE.txt](LICENSE.txt) for more information.
 
 # Contributions
 
@@ -52,6 +47,16 @@ Signed-off-by: Foo Bar foo.bar@example.org
 The contributions will be code reviewed by Arm before they can be accepted into
 the repository.
 
-## Security
+# Security
 
 Please see [Security](SECURITY.md).
+
+# License
+
+The Arm Ethos-U core software is provided under an Apache-2.0 license. Please
+see [LICENSE.txt](LICENSE.txt) for more information.
+
+# Trademark notice
+
+Arm, Cortex and Ethos are registered trademarks of Arm Limited (or its
+subsidiaries) in the US and/or elsewhere.

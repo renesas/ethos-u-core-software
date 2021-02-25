@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+ * Copyright (c) 2019-2021 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -320,24 +320,24 @@ bool InferenceProcess::runJob(InferenceJob &job) {
             const TfLiteTensor *output = interpreter.output(i);
 
             if (expected.size != output->bytes) {
-                printf(
-                    "Expected tensor size does not match network size. job=%s, index=%u, expected=%zu, network=%zu\n",
-                    job.name.c_str(),
-                    i,
-                    expected.size,
-                    output->bytes);
+                printf("Expected tensor size does not match output size. job=%s, index=%u, expected=%zu, network=%zu\n",
+                       job.name.c_str(),
+                       i,
+                       expected.size,
+                       output->bytes);
                 return true;
             }
 
             for (unsigned int j = 0; j < output->bytes; ++j) {
                 if (output->data.uint8[j] != static_cast<uint8_t *>(expected.data)[j]) {
-                    printf("Expected tensor size does not match network size. job=%s, index=%u, offset=%u, "
+                    printf("Expected data does not match output data. job=%s, index=%u, offset=%u, "
                            "expected=%02x, network=%02x\n",
                            job.name.c_str(),
                            i,
                            j,
                            static_cast<uint8_t *>(expected.data)[j],
                            output->data.uint8[j]);
+                    return true;
                 }
             }
         }

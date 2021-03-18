@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020 Arm Limited. All rights reserved.
+# Copyright (c) 2020-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -43,3 +43,9 @@ target_link_libraries(ethosu_drivers INTERFACE ethosu_mhu_dummy)
 # NOTE: All UART drivers are built, however a platform application should
 #       link the appropriate driver target (see drivers/uart/CMakeLists.txt).
 add_subdirectory(uart)
+
+#############################################################################
+# Timing adapter driver
+#############################################################################
+add_subdirectory(timing_adapter)
+target_link_libraries(ethosu_drivers INTERFACE timing_adapter)

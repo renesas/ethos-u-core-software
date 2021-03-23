@@ -203,10 +203,12 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     tflite::MicroProfiler profiler;
 
 #if defined(INFERENCE_PROC_TFLU_PROFILER) && defined(ETHOSU)
-    profiler.MonitorEthosuPMUEvents(ethosu_pmu_event_type(job.pmuEventConfig[0]),
-                                    ethosu_pmu_event_type(job.pmuEventConfig[1]),
-                                    ethosu_pmu_event_type(job.pmuEventConfig[2]),
-                                    ethosu_pmu_event_type(job.pmuEventConfig[3]));
+    vector<ethosu_pmu_event_type> pmu_events(ETHOSU_PMU_NCOUNTERS, ETHOSU_PMU_NO_EVENT);
+
+    for (size_t i = 0; i < job.pmuEventConfig.size(); i++) {
+        pmu_events[i] = ethosu_pmu_event_type(job.pmuEventConfig[i]);
+    }
+    profiler.MonitorEthosuPMUEvents(pmu_events[0], pmu_events[1], pmu_events[2], pmu_events[3]);
 #endif
     tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, reporter, &profiler);
 

@@ -22,5 +22,13 @@ add_library(inference_process STATIC)
 
 target_include_directories(inference_process PUBLIC include
                            PRIVATE ${TENSORFLOW_PATH} ${TENSORFLOW_PATH}/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include)
+
 target_link_libraries(inference_process PRIVATE tflu cmsis_core cmsis_device)
+if (TARGET ethosu_profiler)
+    target_link_libraries(inference_process PRIVATE ethosu_profiler)
+endif()
+if (TARGET arm_profiler)
+    target_link_libraries(inference_process PRIVATE arm_profiler)
+endif()
+
 target_sources(inference_process PRIVATE src/inference_process.cpp)

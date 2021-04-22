@@ -63,6 +63,9 @@ include(tensorflow.cmake)
 # Build RTOS
 add_subdirectory(rtos)
 
+# Build libs
+add_subdirectory(lib)
+
 # Build applications
 add_subdirectory(applications)
 

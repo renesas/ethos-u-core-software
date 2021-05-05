@@ -29,26 +29,37 @@ endif()
 
 get_filename_component(TFLU_TARGET_TOOLCHAIN_ROOT ${CMAKE_C_COMPILER} DIRECTORY)
 
-set(TFLU_TARGET_TOOLCHAIN_ROOT "${TFLU_TARGET_TOOLCHAIN_ROOT}/")
+set(TFLU_TARGET_TOOLCHAIN_ROOT "'${TFLU_TARGET_TOOLCHAIN_ROOT}'/")
 set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
-set(TFLU_GENDIR ${CMAKE_CURRENT_BINARY_DIR}/tensorflow/)
+set(TFLU_GENDIR "${CMAKE_CURRENT_BINARY_DIR}/tensorflow/")
 set(TFLU_TARGET "cortex_m_generic")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}
     CACHE STRING "Tensorflow Lite for Microcontrollers target architecture")
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
 set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro optimization level")
 
-if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
-    set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
-    # Set preference for ethos-u over cmsis-nn
-    set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
-    set(TFLU_CO_PROCESSOR "ethos_u")
-elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
-    set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
-endif()
 
-# Command and target
-add_custom_target(tflu_gen ALL
+if (TFLU_PREBUILT_LIBRARY_PATH)
+    set(TFLU_IMPORTED_LIB_PATH "${TFLU_PREBUILT_LIBRARY_PATH}")
+    message(STATUS "Using a prebuilt TensorFlow Lite for Microcontrollers library: ${TFLU_IMPORTED_LIB_PATH}")
+else()
+    if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
+        set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
+        # Set preference for ethos-u over cmsis-nn
+        set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
+        set(TFLU_CO_PROCESSOR "ethos_u")
+    elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
+        set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
+    endif()
+
+    # Windows: change to relative paths.
+    if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
+        file(RELATIVE_PATH CMSIS_PATH ${TENSORFLOW_PATH} ${CMSIS_PATH})
+        file(RELATIVE_PATH CORE_DRIVER_PATH ${TENSORFLOW_PATH} ${CORE_DRIVER_PATH})
+    endif()
+
+    # Command and target
+    add_custom_target(tflu_gen ALL
                   COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite
                           TARGET_TOOLCHAIN_ROOT=${TFLU_TARGET_TOOLCHAIN_ROOT}
                           TOOLCHAIN=${TFLU_TOOLCHAIN}
@@ -66,9 +77,12 @@ add_custom_target(tflu_gen ALL
                   BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/tensorflow/tensorflow/lite/micro/tools/make/downloads
                   WORKING_DIRECTORY ${TENSORFLOW_PATH})
 
+    set(TFLU_IMPORTED_LIB_PATH "${TFLU_GENDIR}/lib/libtensorflow-microlite.a")
+endif()
+
 # Create library and link library to custom target
 add_library(tflu STATIC IMPORTED)
-set_property(TARGET tflu PROPERTY IMPORTED_LOCATION ${TFLU_GENDIR}/lib/libtensorflow-microlite.a)
+set_property(TARGET tflu PROPERTY IMPORTED_LOCATION "${TFLU_IMPORTED_LIB_PATH}")
 add_dependencies(tflu tflu_gen)
 target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
 target_compile_definitions(tflu INTERFACE TF_LITE_MICRO TF_LITE_STATIC_MEMORY)

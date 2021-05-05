@@ -16,6 +16,8 @@
 # limitations under the License.
 #
 
+# Note: On Windows systems CMake 3.20.0 might cause issues with errouneous dependency make files.
+#       Issues solved with CMake 3.20.1.
 cmake_minimum_required(VERSION 3.15.6)
 
 project(core_software VERSION 0.0.1)
@@ -29,6 +31,7 @@ set(CMSIS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis" CACHE PATH "Path to CMSIS.")
 set(CORE_DRIVER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core_driver" CACHE PATH "Path to core driver.")
 set(LINUX_DRIVER_STACK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../linux_driver_stack" CACHE PATH "Path to Linux driver stack for Arm Ethos-U.")
 set(TENSORFLOW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow" CACHE PATH "Path to Tensorflow.")
+set(TFLU_PREBUILT_LIBRARY_PATH "" CACHE PATH "Path to a prebuilt TensorFlow Lite for Microcontrollers library.")
 
 # Select accelerator for tensorflow
 set(CORE_SOFTWARE_ACCELERATOR "NPU" CACHE STRING "Set NPU backend for Tensorflow Lite for microcontrollers")

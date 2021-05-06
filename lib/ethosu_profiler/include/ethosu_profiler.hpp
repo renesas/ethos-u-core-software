@@ -28,33 +28,19 @@
 namespace tflite {
 class EthosUProfiler : public MicroProfiler {
 public:
-    EthosUProfiler(ethosu_pmu_event_type event0 = ETHOSU_PMU_NO_EVENT,
-                   ethosu_pmu_event_type event1 = ETHOSU_PMU_NO_EVENT,
-                   ethosu_pmu_event_type event2 = ETHOSU_PMU_NO_EVENT,
-                   ethosu_pmu_event_type event3 = ETHOSU_PMU_NO_EVENT,
-                   size_t max_events            = 200);
+    EthosUProfiler(size_t max_events = 200);
     uint32_t BeginEvent(const char *tag);
     void EndEvent(uint32_t event_handle);
     uint64_t GetTotalTicks() const;
     void Log() const;
-    uint32_t GetEthosuPMUCounter(int counter);
 
 private:
-    void MonitorEthosuPMUEvents(ethosu_pmu_event_type event0,
-                                ethosu_pmu_event_type event1,
-                                ethosu_pmu_event_type event2,
-                                ethosu_pmu_event_type event3);
-
     size_t max_events_;
     std::unique_ptr<const char *[]> tags_;
     std::unique_ptr<uint64_t[]> start_ticks_;
     std::unique_ptr<uint64_t[]> end_ticks_;
 
     int num_events_ = 0;
-
-    ethosu_pmu_event_type ethosu_pmu_cntrs[ETHOSU_PMU_NCOUNTERS];
-
-    uint32_t event_counters[ETHOSU_PMU_NCOUNTERS];
 
     TF_LITE_REMOVE_VIRTUAL_DELETE;
 };

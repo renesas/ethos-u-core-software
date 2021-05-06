@@ -112,11 +112,7 @@ InferenceJob::InferenceJob(const string &_name,
     name(_name),
     networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
     numBytesToPrint(_numBytesToPrint), pmuEventConfig(_pmuEventConfig), pmuCycleCounterEnable(_pmuCycleCounterEnable),
-    pmuEventCount(), pmuCycleCounterCount(0) {
-#if defined(INFERENCE_PROC_TFLU_PROFILER) && defined(ETHOSU)
-    pmuEventCount = vector<uint32_t>(ETHOSU_PMU_NCOUNTERS, 0);
-#endif
-}
+    pmuEventCount(), pmuCycleCounterCount(0) {}
 
 void InferenceJob::invalidate() {
     networkModel.invalidate();
@@ -206,15 +202,11 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
 #ifdef ETHOSU
-    vector<ethosu_pmu_event_type> pmu_events(ETHOSU_PMU_NCOUNTERS, ETHOSU_PMU_NO_EVENT);
-
-    for (size_t i = 0; i < job.pmuEventConfig.size(); i++) {
-        pmu_events[i] = ethosu_pmu_event_type(job.pmuEventConfig[i]);
-    }
-    tflite::EthosUProfiler profiler(pmu_events[0], pmu_events[1], pmu_events[2], pmu_events[3]);
+    tflite::EthosUProfiler profiler;
 #else
     tflite::ArmProfiler profiler;
 #endif
+
     tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, reporter, &profiler);
 
     // Allocate tensors
@@ -273,11 +265,6 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         job.pmuCycleCounterCount = profiler.GetTotalTicks();
     }
 
-#ifdef ETHOSU
-    for (uint32_t i = 0; i < ETHOSU_PMU_NCOUNTERS; i++) {
-        job.pmuEventCount[i] = profiler.GetEthosuPMUCounter(i);
-    }
-#endif
 #endif
 
     // Copy output data

@@ -28,6 +28,7 @@ project(core_software VERSION 0.0.1)
 
 # Setup paths
 set(CMSIS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis" CACHE PATH "Path to CMSIS.")
+set(CMSIS_VIEW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis-view" CACHE PATH "Path to cmsis-view.")
 set(CORE_DRIVER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core_driver" CACHE PATH "Path to core driver.")
 set(LINUX_DRIVER_STACK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../linux_driver_stack" CACHE PATH "Path to Linux driver stack for Arm Ethos-U.")
 set(TENSORFLOW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow" CACHE PATH "Path to Tensorflow.")
@@ -62,6 +63,9 @@ include(tensorflow.cmake)
 
 # Build RTOS
 add_subdirectory(rtos)
+
+# Build EventRecorder
+include(event_recorder.cmake)
 
 # Build libs
 add_subdirectory(lib)

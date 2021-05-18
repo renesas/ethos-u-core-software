@@ -16,12 +16,11 @@
 # limitations under the License.
 #
 
-# Build ethosu_profiler
-add_subdirectory(ethosu_profiler)
+if (NOT TARGET ethosu_core_driver)
+    return()
+endif()
+add_library(ethosu_monitor INTERFACE)
 
-# Build arm_profiler
-add_subdirectory(arm_profiler)
-
-# Build ethosu_monitor
-add_subdirectory(ethosu_monitor)
-
+target_link_libraries(ethosu_monitor INTERFACE ethosu_core_driver event_recorder)
+target_include_directories(ethosu_monitor INTERFACE include)
+target_sources(ethosu_monitor INTERFACE src/ethosu_monitor.cpp)

@@ -16,12 +16,17 @@
 # limitations under the License.
 #
 
-# Build ethosu_profiler
-add_subdirectory(ethosu_profiler)
+add_library(event_recorder INTERFACE)
 
-# Build arm_profiler
-add_subdirectory(arm_profiler)
+target_include_directories(event_recorder INTERFACE
+    ${CMSIS_VIEW_PATH}/EventRecorder/Include
+    ${CMSIS_VIEW_PATH}/EventRecorder/Config)
 
-# Build ethosu_monitor
-add_subdirectory(ethosu_monitor)
+target_include_directories(event_recorder INTERFACE
+      ${CMSIS_VIEW_PATH}/EventRecorder/Config)
 
+target_link_libraries(event_recorder INTERFACE cmsis_device)
+target_sources(event_recorder INTERFACE
+      ${CMSIS_VIEW_PATH}/EventRecorder/Source/EventRecorder.c)
+
+target_compile_definitions(event_recorder INTERFACE RTE_Components_CMSIS_device_header=\"${ARM_CPU}${ARM_FEATURES}.h\")

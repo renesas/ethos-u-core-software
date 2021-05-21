@@ -38,7 +38,7 @@ uint64_t GetCurrentEthosuTicks(struct ethosu_driver *drv) {
 
 namespace tflite {
 
-EthosUProfiler::EthosUProfiler(size_t max_events) : max_events_(max_events) {
+EthosUProfiler::EthosUProfiler(size_t max_events) : max_events_(max_events), num_events_(0) {
     tags_        = std::make_unique<const char *[]>(max_events_);
     start_ticks_ = std::make_unique<uint64_t[]>(max_events_);
     end_ticks_   = std::make_unique<uint64_t[]>(max_events_);
@@ -92,7 +92,8 @@ void EthosUProfiler::EndEvent(uint32_t event_handle) {
 
 uint64_t EthosUProfiler::GetTotalTicks() const {
     uint64_t ticks = 0;
-    for (int i = 0; i < num_events_; ++i) {
+
+    for (size_t i = 0; i < num_events_; ++i) {
         ticks += end_ticks_[i] - start_ticks_[i];
     }
 

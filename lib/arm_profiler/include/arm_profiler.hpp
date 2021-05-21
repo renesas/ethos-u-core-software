@@ -38,7 +38,7 @@ private:
     std::unique_ptr<int32_t[]> start_ticks_;
     std::unique_ptr<int32_t[]> end_ticks_;
 
-    int num_events_ = 0;
+    size_t num_events_;
 
     TF_LITE_REMOVE_VIRTUAL_DELETE;
 };

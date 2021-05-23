@@ -23,7 +23,7 @@
 
 #include <string.h>
 
-#include "ethosu_profiler.hpp"
+#include "layer_by_layer_profiler.hpp"
 #include <ethosu_driver.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -38,7 +38,9 @@ uint64_t GetCurrentEthosuTicks(struct ethosu_driver *drv) {
 
 namespace tflite {
 
-EthosUProfiler::EthosUProfiler(size_t max_events) : max_events_(max_events), num_events_(0) {
+LayerByLayerProfiler::LayerByLayerProfiler(size_t max_events, Backend backend, int32_t event_id) :
+    max_events_(max_events), backend_(backend), event_id_(event_id), num_events_(0) {
+
     tags_        = std::make_unique<const char *[]>(max_events_);
     start_ticks_ = std::make_unique<uint64_t[]>(max_events_);
     end_ticks_   = std::make_unique<uint64_t[]>(max_events_);
@@ -50,7 +52,7 @@ EthosUProfiler::EthosUProfiler(size_t max_events) : max_events_(max_events), num
 }
 
 // NOTE: THIS PROFILER ONLY WORKS ON SYSTEMS WITH 1 NPU
-uint32_t EthosUProfiler::BeginEvent(const char *tag) {
+uint32_t LayerByLayerProfiler::BeginEvent(const char *tag) {
     if (num_events_ == max_events_) {
         tflite::GetMicroErrorReporter()->Report("Profiling event overflow, max: %u events", max_events_);
         num_events_ = 0;
@@ -74,7 +76,7 @@ uint32_t EthosUProfiler::BeginEvent(const char *tag) {
 }
 
 // NOTE: THIS PROFILER ONLY WORKS ON SYSTEMS WITH 1 NPU
-void EthosUProfiler::EndEvent(uint32_t event_handle) {
+void LayerByLayerProfiler::EndEvent(uint32_t event_handle) {
     TFLITE_DCHECK(event_handle < max_events_);
 
     if (strcmp("ethos-u", tags_[event_handle]) == 0) {
@@ -85,12 +87,16 @@ void EthosUProfiler::EndEvent(uint32_t event_handle) {
         end_ticks_[event_handle] = GetCurrentTimeTicks();
     }
 
-    printf("%s : cycle_cnt : %" PRIu64 " cycles\n",
-           tags_[event_handle],
-           end_ticks_[event_handle] - start_ticks_[event_handle]);
+    if (backend_ == PRINTF) {
+        printf("%s : cycle_cnt : %" PRIu64 " cycles\n",
+               tags_[event_handle],
+               end_ticks_[event_handle] - start_ticks_[event_handle]);
+    } else {
+        EventRecord2(event_id_, (int32_t)event_handle, end_ticks_[event_handle] - start_ticks_[event_handle]);
+    }
 }
 
-uint64_t EthosUProfiler::GetTotalTicks() const {
+uint64_t LayerByLayerProfiler::GetTotalTicks() const {
     uint64_t ticks = 0;
 
     for (size_t i = 0; i < num_events_; ++i) {
@@ -100,11 +106,14 @@ uint64_t EthosUProfiler::GetTotalTicks() const {
     return ticks;
 }
 
-void EthosUProfiler::Log() const {
+void LayerByLayerProfiler::Log() const {
+
 #if !defined(TF_LITE_STRIP_ERROR_STRINGS)
-    for (int i = 0; i < num_events_; ++i) {
-        uint64_t ticks = end_ticks_[i] - start_ticks_[i];
-        printf("%s took %" PRIu64 " cycles\n", tags_[i], ticks);
+    if (backend_ == PRINTF) {
+        for (size_t i = 0; i < num_events_; ++i) {
+            uint64_t ticks = end_ticks_[i] - start_ticks_[i];
+            printf("%s took %" PRIu64 " cycles\n", tags_[i], ticks);
+        }
     }
 #endif
 }

@@ -16,17 +16,18 @@
 # limitations under the License.
 #
 
+add_library(rte_component INTERFACE)
+target_include_directories(rte_component INTERFACE lib/rte_component/include)
+target_link_libraries(rte_component INTERFACE cmsis_device)
+target_compile_definitions(rte_component INTERFACE RTE_Components_CMSIS_device_header=\"${ARM_CPU}${ARM_FEATURES}.h\")
+
 add_library(event_recorder INTERFACE)
 
 target_include_directories(event_recorder INTERFACE
     ${CMSIS_VIEW_PATH}/EventRecorder/Include
     ${CMSIS_VIEW_PATH}/EventRecorder/Config)
 
-target_include_directories(event_recorder INTERFACE
-      ${CMSIS_VIEW_PATH}/EventRecorder/Config)
+target_link_libraries(event_recorder INTERFACE rte_component)
+target_sources(event_recorder INTERFACE ${CMSIS_VIEW_PATH}/EventRecorder/Source/EventRecorder.c)
 
-target_link_libraries(event_recorder INTERFACE cmsis_device)
-target_sources(event_recorder INTERFACE
-      ${CMSIS_VIEW_PATH}/EventRecorder/Source/EventRecorder.c)
 
-target_compile_definitions(event_recorder INTERFACE RTE_Components_CMSIS_device_header=\"${ARM_CPU}${ARM_FEATURES}.h\")

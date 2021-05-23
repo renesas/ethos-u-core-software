@@ -26,7 +26,7 @@
 
 #include "arm_profiler.hpp"
 #ifdef ETHOSU
-#include "ethosu_profiler.hpp"
+#include "layer_by_layer_profiler.hpp"
 #endif
 
 #include "inference_process.hpp"
@@ -202,7 +202,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
 #ifdef ETHOSU
-    tflite::EthosUProfiler profiler;
+    tflite::LayerByLayerProfiler profiler;
 #else
     tflite::ArmProfiler profiler;
 #endif

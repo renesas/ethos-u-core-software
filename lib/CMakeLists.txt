@@ -16,12 +16,11 @@
 # limitations under the License.
 #
 
-# Build ethosu_profiler
-add_subdirectory(ethosu_profiler)
+# Build layer_by_layer_profiler
+add_subdirectory(layer_by_layer_profiler)
 
 # Build arm_profiler
 add_subdirectory(arm_profiler)
 
 # Build ethosu_monitor
 add_subdirectory(ethosu_monitor)
-

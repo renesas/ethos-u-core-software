@@ -19,8 +19,8 @@
 if (NOT TARGET ethosu_core_driver)
     return()
 endif()
-add_library(ethosu_profiler INTERFACE)
 
-target_link_libraries(ethosu_profiler INTERFACE ethosu_core_driver tflu)
-target_include_directories(ethosu_profiler INTERFACE include)
-target_sources(ethosu_profiler INTERFACE src/ethosu_profiler.cpp)
+add_library(layer_by_layer_profiler INTERFACE)
+target_link_libraries(layer_by_layer_profiler INTERFACE ethosu_core_driver tflu event_recorder)
+target_include_directories(layer_by_layer_profiler INTERFACE include)
+target_sources(layer_by_layer_profiler INTERFACE src/layer_by_layer_profiler.cpp)

@@ -31,7 +31,7 @@
 namespace {
 
 uint64_t GetCurrentEthosuTicks(struct ethosu_driver *drv) {
-    return ETHOSU_PMU_Get_CCNTR_v2(drv);
+    return ETHOSU_PMU_Get_CCNTR(drv);
 }
 
 } // namespace
@@ -44,8 +44,8 @@ EthosUProfiler::EthosUProfiler(size_t max_events) : max_events_(max_events) {
     end_ticks_   = std::make_unique<uint64_t[]>(max_events_);
 
     struct ethosu_driver *drv = ethosu_reserve_driver();
-    ETHOSU_PMU_CNTR_Enable_v2(drv, ETHOSU_PMU_CCNT_Msk);
-    ETHOSU_PMU_CYCCNT_Reset_v2(drv);
+    ETHOSU_PMU_CNTR_Enable(drv, ETHOSU_PMU_CCNT_Msk);
+    ETHOSU_PMU_CYCCNT_Reset(drv);
     ethosu_release_driver(drv);
 }
 
@@ -60,9 +60,9 @@ uint32_t EthosUProfiler::BeginEvent(const char *tag) {
 
     if (strcmp("ethos-u", tag) == 0) {
         struct ethosu_driver *ethosu_drv = ethosu_reserve_driver();
-        ETHOSU_PMU_CYCCNT_Reset_v2(ethosu_drv);
-        ETHOSU_PMU_PMCCNTR_CFG_Set_Start_Event_v2(ethosu_drv, ETHOSU_PMU_NPU_ACTIVE);
-        ETHOSU_PMU_PMCCNTR_CFG_Set_Stop_Event_v2(ethosu_drv, ETHOSU_PMU_NPU_IDLE);
+        ETHOSU_PMU_CYCCNT_Reset(ethosu_drv);
+        ETHOSU_PMU_PMCCNTR_CFG_Set_Start_Event(ethosu_drv, ETHOSU_PMU_NPU_ACTIVE);
+        ETHOSU_PMU_PMCCNTR_CFG_Set_Stop_Event(ethosu_drv, ETHOSU_PMU_NPU_IDLE);
         start_ticks_[num_events_] = GetCurrentEthosuTicks(ethosu_drv);
         ethosu_release_driver(ethosu_drv);
     } else {

@@ -19,8 +19,8 @@
 #include "ethosu_monitor.hpp"
 #include <stdio.h>
 
-EthosUMonitor::EthosUMonitor(int32_t __eventRecordId, Backend __backend) :
-    eventRecordId(__eventRecordId), backend(__backend) {}
+EthosUMonitor::EthosUMonitor(std::vector<int32_t> __eventRecordIds, Backend __backend) :
+    eventRecordIds(__eventRecordIds), backend(__backend) {}
 
 void EthosUMonitor::monitorSample(ethosu_driver *drv) {
     // Fetch events
@@ -29,7 +29,7 @@ void EthosUMonitor::monitorSample(ethosu_driver *drv) {
         eventCount[i] = ETHOSU_PMU_Get_EVCNTR(drv, i);
         switch (backend) {
         case EVENT_RECORDER:
-            EventRecord2(eventRecordId, ethosuEventIds[i], eventCount[i]);
+            EventRecord2(eventRecordIds[i], ethosuEventIds[i], eventCount[i]);
             break;
         case PRINTF:
         default:

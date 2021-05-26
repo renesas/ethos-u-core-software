@@ -25,13 +25,14 @@
 #include <ethosu_driver.h>
 #include <pmu_ethosu.h>
 #include <stdint.h>
+#include <vector>
 
 class EthosUMonitor {
 
 public:
     enum Backend { PRINTF, EVENT_RECORDER };
 
-    EthosUMonitor(int32_t __id = EventID(EventLevelError, EvtStatistics_No, EventRecordNone), Backend backend = PRINTF);
+    EthosUMonitor(std::vector<int32_t> eventRecordIds, Backend backend = PRINTF);
 
     template <typename T>
     void configure(ethosu_driver *drv, const T &eventIds) {
@@ -59,8 +60,8 @@ public:
 private:
     ethosu_pmu_event_type ethosuEventIds[ETHOSU_PMU_NCOUNTERS];
     size_t numEvents;
-    int32_t eventRecordId;
     Backend backend;
+    std::vector<int32_t> eventRecordIds;
 };
 
 #endif

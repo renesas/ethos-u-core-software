@@ -60,8 +60,8 @@ public:
 private:
     ethosu_pmu_event_type ethosuEventIds[ETHOSU_PMU_NCOUNTERS];
     size_t numEvents;
-    Backend backend;
     std::vector<int32_t> eventRecordIds;
+    Backend backend;
 };
 
 #endif

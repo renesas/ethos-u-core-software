@@ -31,7 +31,7 @@ set(CMSIS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis" CACHE PATH "Path to CMSIS.")
 set(CMSIS_VIEW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis-view" CACHE PATH "Path to cmsis-view.")
 set(CORE_DRIVER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core_driver" CACHE PATH "Path to core driver.")
 set(LINUX_DRIVER_STACK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../linux_driver_stack" CACHE PATH "Path to Linux driver stack for Arm Ethos-U.")
-set(TENSORFLOW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tensorflow" CACHE PATH "Path to Tensorflow.")
+set(TENSORFLOW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tflite_micro" CACHE PATH "Path to Tensorflow Lite Micro.")
 set(TFLU_PREBUILT_LIBRARY_PATH "" CACHE PATH "Path to a prebuilt TensorFlow Lite for Microcontrollers library.")
 
 # Select accelerator for tensorflow
@@ -58,8 +58,8 @@ if (CORE_SOFTWARE_ACCELERATOR STREQUAL "NPU")
     target_link_libraries(ethosu_core INTERFACE ethosu_core_driver)
 endif()
 
-# Build Tensorflow library
-include(tensorflow.cmake)
+# Build Tensorflow Lite Micro library
+include(tflite_micro.cmake)
 
 # Build RTOS
 add_subdirectory(rtos)

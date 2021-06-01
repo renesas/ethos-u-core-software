@@ -6,4 +6,5 @@
 /rtos/mbed-os
 /rtos/zephyr
 /tensorflow
+/tflite_micro
 /cmsis-view

@@ -88,6 +88,7 @@ public:
     void sendPong();
     void sndErrorRspAndResetQueue(EthosU::ethosu_core_msg_err_type type, const char *message);
     void sendVersionRsp();
+    void sendCapabilityRsp(uint64_t userArg);
     void sendInferenceRsp(uint64_t userArg,
                           std::vector<InferenceProcess::DataPtr> &ofm,
                           bool failed,

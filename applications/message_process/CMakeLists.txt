@@ -18,4 +18,8 @@
 
 add_library(message_process STATIC src/message_process.cpp)
 target_include_directories(message_process PUBLIC include ${LINUX_DRIVER_STACK_PATH}/kernel)
+
 target_link_libraries(message_process PRIVATE cmsis_device inference_process ethosu_mailbox)
+if (CORE_SOFTWARE_ACCELERATOR STREQUAL "NPU")
+    target_link_libraries(message_process PRIVATE ethosu_core_driver)
+endif()

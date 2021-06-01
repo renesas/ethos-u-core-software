@@ -16,6 +16,10 @@
  * limitations under the License.
  */
 
+#if defined(ETHOSU)
+#include <ethosu_driver.h>
+#endif
+
 #include <message_process.hpp>
 
 #include "cmsis_compiler.h"
@@ -220,6 +224,18 @@ bool MessageProcess::handleMessage() {
         printf("Msg: Version request\n");
         sendVersionRsp();
         break;
+    case ETHOSU_CORE_MSG_CAPABILITIES_REQ: {
+        ethosu_core_capabilities_req req;
+        if (!queueIn.read(req)) {
+            sndErrorRspAndResetQueue(ETHOSU_CORE_MSG_ERR_INVALID_PAYLOAD, "CapabilitiesReq. Failed to read payload");
+            return false;
+        }
+
+        printf("Msg: Capability request.user_arg=0x%" PRIx64 "", req.user_arg);
+
+        sendCapabilityRsp(req.user_arg);
+        break;
+    }
     case ETHOSU_CORE_MSG_INFERENCE_REQ: {
         ethosu_core_inference_req req;
 
@@ -311,13 +327,69 @@ void MessageProcess::sendPong() {
 }
 
 void MessageProcess::sendVersionRsp() {
-    struct ethosu_core_msg_version ver = {.major     = ETHOSU_CORE_MSG_VERSION_MAJOR,
-                                          .minor     = ETHOSU_CORE_MSG_VERSION_MINOR,
-                                          .patch     = ETHOSU_CORE_MSG_VERSION_PATCH,
-                                          ._reserved = 0};
+    struct ethosu_core_msg_version ver = {
+        ETHOSU_CORE_MSG_VERSION_MAJOR,
+        ETHOSU_CORE_MSG_VERSION_MINOR,
+        ETHOSU_CORE_MSG_VERSION_PATCH,
+        0,
+    };
 
     if (!queueOut.write(ETHOSU_CORE_MSG_VERSION_RSP, ver)) {
         printf("ERROR: Failed to write version response. No mailbox message sent\n");
+    } else {
+        mailbox.sendMessage();
+    }
+}
+
+void MessageProcess::sendCapabilityRsp(uint64_t userArg) {
+    struct ethosu_core_msg_capabilities_rsp capabilities;
+#if defined(ETHOSU)
+    struct ethosu_driver_version driver_version;
+    struct ethosu_hw_info hw_info;
+    ethosu_get_driver_version(&driver_version);
+    struct ethosu_driver *drv = ethosu_reserve_driver();
+    ethosu_get_hw_info(drv, &hw_info);
+    ethosu_release_driver(drv);
+
+    capabilities = {
+        userArg,
+        hw_info.version.version_status,
+        hw_info.version.version_minor,
+        hw_info.version.version_major,
+        hw_info.version.product_major,
+        hw_info.version.arch_patch_rev,
+        hw_info.version.arch_minor_rev,
+        hw_info.version.arch_major_rev,
+        driver_version.patch,
+        driver_version.minor,
+        driver_version.major,
+        hw_info.cfg.macs_per_cc,
+        hw_info.cfg.cmd_stream_version,
+        hw_info.cfg.shram_size,
+        hw_info.cfg.custom_dma,
+    };
+#else
+    capabilities = {
+        userArg,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+    };
+#endif
+
+    if (!queueOut.write(ETHOSU_CORE_MSG_CAPABILITIES_RSP, capabilities)) {
+        printf("ERROR: Failed to write capability response. No mailbox message sent\n");
     } else {
         mailbox.sendMessage();
     }

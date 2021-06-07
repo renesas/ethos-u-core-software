@@ -84,7 +84,10 @@ endif()
 add_library(tflu STATIC IMPORTED)
 set_property(TARGET tflu PROPERTY IMPORTED_LOCATION "${TFLU_IMPORTED_LIB_PATH}")
 add_dependencies(tflu tflu_gen)
-target_include_directories(tflu INTERFACE ${TENSORFLOW_PATH})
+target_include_directories(tflu INTERFACE
+    ${TENSORFLOW_PATH})
+target_compile_options(tflu INTERFACE
+    -I${TENSORFLOW_PATH}/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include)
 target_compile_definitions(tflu INTERFACE TF_LITE_MICRO TF_LITE_STATIC_MEMORY)
 
 if(${TFLU_BUILD_TYPE} STREQUAL "release")

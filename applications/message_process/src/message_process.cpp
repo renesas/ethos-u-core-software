@@ -367,13 +367,11 @@ void MessageProcess::sendCapabilityRsp(uint64_t userArg) {
         driver_version.major,
         hw_info.cfg.macs_per_cc,
         hw_info.cfg.cmd_stream_version,
-        hw_info.cfg.shram_size,
         hw_info.cfg.custom_dma,
     };
 #else
     capabilities = {
         userArg,
-        0,
         0,
         0,
         0,

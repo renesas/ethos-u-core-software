@@ -60,6 +60,7 @@ else()
 
     # Command and target
     add_custom_target(tflu_gen ALL
+                  COMMAND make -f ${TFLU_PATH}/tools/make/Makefile third_party_downloads
                   COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite
                           TARGET_TOOLCHAIN_ROOT=${TFLU_TARGET_TOOLCHAIN_ROOT}
                           TOOLCHAIN=${TFLU_TOOLCHAIN}

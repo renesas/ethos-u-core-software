@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -65,7 +65,6 @@ add_link_options(-mfloat-abi=${FLOAT})
 
 # Link target
 add_link_options(-mcpu=${__CPU_COMPILE_TARGET})
-add_link_options(-Xlinker -Map=output.map)
 
 #
 # Compile options

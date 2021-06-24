@@ -21,3 +21,21 @@ if(CORE_SOFTWARE_RTOS_LOWER STREQUAL "freertos" OR CORE_SOFTWARE_RTOS_LOWER STRE
     set(FREERTOS_KERNEL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/freertos/freertos_kernel" CACHE PATH "Path to FreeRTOS kernel.")
     add_subdirectory(freertos_config)
 endif()
+
+# Include ThreadX
+if(CORE_SOFTWARE_RTOS_LOWER STREQUAL "threadx" OR CORE_SOFTWARE_RTOS_LOWER STREQUAL "all")
+    #threadx build requires 2 defines: THREADX_ARCH (format: cortex_m4) and THREADX_TOOLCHAIN (ac5/ac6/gnu).
+    #set them according to existing defines CMAKE_SYSTEM_PROCESSOR and CMAKE_CXX_COMPILER_ID:
+    string(REPLACE "-" "_" THREADX_ARCH ${CMAKE_SYSTEM_PROCESSOR})
+    string(TOLOWER ${CMAKE_CXX_COMPILER_ID} THREADX_TOOLCHAIN)
+    #if armclang, change the format to "ac6".
+    if(THREADX_TOOLCHAIN STREQUAL "armclang")
+        set(THREADX_TOOLCHAIN "ac6")
+    endif()
+    #if ThreadX supports this configuration, build ThreadX.
+    if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/threadx/ports/${THREADX_ARCH}/${THREADX_TOOLCHAIN}/CMakeLists.txt)
+        add_subdirectory(threadx)
+    else()
+        message(STATUS "Skipping ThreadX build - doesn't support toolchain=${THREADX_TOOLCHAIN} and cpu=${THREADX_ARCH}")
+    endif()
+endif()

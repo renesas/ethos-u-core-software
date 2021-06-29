@@ -257,14 +257,11 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     printf("%s : %zu\r\n", "arena_used_bytes", interpreter.arena_used_bytes());
 
-#ifdef INFERENCE_PROC_TFLU_PROFILER
     printf("Inference runtime: %u cycles\r\n", (unsigned int)profiler.GetTotalTicks());
 
     if (job.pmuCycleCounterEnable != 0) {
         job.pmuCycleCounterCount = profiler.GetTotalTicks();
     }
-
-#endif
 
     // Copy output data
     if (job.output.size() > 0) {

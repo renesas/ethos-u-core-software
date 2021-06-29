@@ -3,8 +3,7 @@
 /cmsis
 /openamp
 /rtos/freertos
-/rtos/mbed-os
-/rtos/zephyr
+/rtos/threadx
 /tensorflow
 /tflite_micro
 /cmsis-view

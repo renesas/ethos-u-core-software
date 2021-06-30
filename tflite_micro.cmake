@@ -36,7 +36,7 @@ set(TFLU_TARGET "cortex_m_generic")
 set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}
     CACHE STRING "Tensorflow Lite for Microcontrollers target architecture")
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
-set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro optimization level")
+set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro kernel optimization level")
 
 
 if (TFLU_PREBUILT_LIBRARY_PATH)
@@ -71,7 +71,8 @@ else()
                           CO_PROCESSOR="${TFLU_CO_PROCESSOR}"
                           $<$<BOOL:${FLOAT}>:FLOAT=${FLOAT}>
                           BUILD_TYPE=${TFLU_BUILD_TYPE}
-                          $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
+                          $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:KERNEL_OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
+                          $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:CORE_OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
                           CMSIS_PATH=${CMSIS_PATH}
                           ETHOSU_DRIVER_PATH=${CORE_DRIVER_PATH}
                           ETHOSU_DRIVER_LIBS=${TFLU_ETHOSU_LIBS}

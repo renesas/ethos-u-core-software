@@ -42,6 +42,16 @@ set_property(CACHE CORE_SOFTWARE_ACCELERATOR PROPERTY STRINGS CPU CMSIS-NN NPU)
 set(CORE_SOFTWARE_RTOS "None" CACHE STRING "Select RTOS to include. (None, MbedOS, FreeRTOS, Zephyr)")
 string(TOLOWER ${CORE_SOFTWARE_RTOS} CORE_SOFTWARE_RTOS_LOWER)
 
+set(LOG_NAMES err warning info debug)
+set(ETHOSU_LOG_SEVERITY "warning" CACHE STRING "Driver log severity level ${LOG_NAMES} (Defaults to warning)")
+set_property(CACHE ETHOSU_LOG_SEVERITY PROPERTY STRINGS ${LOG_NAMES})
+
+# Check that ETHOSU_LOG_SEVERITY has one of the supported levels
+list(FIND LOG_NAMES ${ETHOSU_LOG_SEVERITY} LOG_SEVERITY)
+if (${LOG_SEVERITY} EQUAL -1)
+    message(FATAL_ERROR "Unsupported log level ${ETHOSU_LOG_SEVERITY}")
+endif()
+
 #
 # Build
 #
@@ -78,3 +88,10 @@ add_subdirectory(drivers)
 
 # Merge libraries into static library
 target_link_libraries(ethosu_core INTERFACE tflu ethosu_applications ethosu_drivers)
+
+message(STATUS "*******************************************************")
+message(STATUS "PROJECT_NAME                           : ${PROJECT_NAME}")
+message(STATUS "CORE_SOFTWARE_RTOS                     : ${CORE_SOFTWARE_RTOS}")
+message(STATUS "CORE_SOFTWARE_ACCELERATOR              : ${CORE_SOFTWARE_ACCELERATOR}")
+message(STATUS "ETHOSU_LOG_SEVERITY                    : ${ETHOSU_LOG_SEVERITY}")
+message(STATUS "*******************************************************")

@@ -24,6 +24,8 @@
 
 #include "cmsis_compiler.h"
 
+#include "ethosu_log.h"
+
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
@@ -198,7 +200,7 @@ bool MessageProcess::handleMessage() {
         return false;
     }
 
-    printf("Msg: header magic=%" PRIX32 ", type=%" PRIu32 ", length=%" PRIu32 "\n", msg.magic, msg.type, msg.length);
+    LOG_INFO("Msg: header magic=%" PRIX32 ", type=%" PRIu32 ", length=%" PRIu32 "\n", msg.magic, msg.type, msg.length);
 
     if (msg.magic != ETHOSU_CORE_MSG_MAGIC) {
         sndErrorRspAndResetQueue(ETHOSU_CORE_MSG_ERR_INVALID_MAGIC, "Invalid magic");
@@ -207,21 +209,21 @@ bool MessageProcess::handleMessage() {
 
     switch (msg.type) {
     case ETHOSU_CORE_MSG_PING:
-        printf("Msg: Ping\n");
+        LOG_INFO("Msg: Ping\n");
         sendPong();
         break;
     case ETHOSU_CORE_MSG_ERR: {
         struct ethosu_core_msg_err error = {0};
         if (!queueIn.read(error)) {
-            printf("ERROR: Msg: Failed to receive error message\n");
+            LOG_ERR("Msg: Failed to receive error message\n");
         } else {
-            printf("Msg: Received an error response, type=%" PRIu32 ", msg=\"%s\"\n", error.type, error.msg);
+            LOG_INFO("Msg: Received an error response, type=%" PRIu32 ", msg=\"%s\"\n", error.type, error.msg);
         }
         queueIn.reset();
         return false;
     }
     case ETHOSU_CORE_MSG_VERSION_REQ:
-        printf("Msg: Version request\n");
+        LOG_INFO("Msg: Version request\n");
         sendVersionRsp();
         break;
     case ETHOSU_CORE_MSG_CAPABILITIES_REQ: {
@@ -231,7 +233,7 @@ bool MessageProcess::handleMessage() {
             return false;
         }
 
-        printf("Msg: Capability request.user_arg=0x%" PRIx64 "", req.user_arg);
+        LOG_INFO("Msg: Capability request.user_arg=0x%" PRIx64 "\n", req.user_arg);
 
         sendCapabilityRsp(req.user_arg);
         break;
@@ -244,30 +246,30 @@ bool MessageProcess::handleMessage() {
             return false;
         }
 
-        printf("Msg: InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIx32 ", %" PRIu32 "}",
-               req.user_arg,
-               req.network.ptr,
-               req.network.size);
+        LOG_INFO("Msg: InferenceReq. user_arg=0x%" PRIx64 ", network={0x%" PRIx32 ", %" PRIu32 "}",
+                 req.user_arg,
+                 req.network.ptr,
+                 req.network.size);
 
-        printf(", ifm_count=%" PRIu32 ", ifm=[", req.ifm_count);
+        LOG_DEBUG_N(", ifm_count=%" PRIu32 ", ifm=[", req.ifm_count);
         for (uint32_t i = 0; i < req.ifm_count; ++i) {
             if (i > 0) {
-                printf(", ");
+                LOG_DEBUG_N(", ");
             }
 
-            printf("{0x%" PRIx32 ", %" PRIu32 "}", req.ifm[i].ptr, req.ifm[i].size);
+            LOG_DEBUG_N("{0x%" PRIx32 ", %" PRIu32 "}", req.ifm[i].ptr, req.ifm[i].size);
         }
-        printf("]");
+        LOG_DEBUG_N("]");
 
-        printf(", ofm_count=%" PRIu32 ", ofm=[", req.ofm_count);
+        LOG_DEBUG_N(", ofm_count=%" PRIu32 ", ofm=[", req.ofm_count);
         for (uint32_t i = 0; i < req.ofm_count; ++i) {
             if (i > 0) {
-                printf(", ");
+                LOG_DEBUG_N(", ");
             }
 
-            printf("{0x%" PRIx32 ", %" PRIu32 "}", req.ofm[i].ptr, req.ofm[i].size);
+            LOG_DEBUG_N("{0x%" PRIx32 ", %" PRIu32 "}", req.ofm[i].ptr, req.ofm[i].size);
         }
-        printf("]\n");
+        LOG_DEBUG_N("]\n");
 
         DataPtr networkModel(reinterpret_cast<void *>(req.network.ptr), req.network.size);
 
@@ -320,7 +322,7 @@ bool MessageProcess::handleMessage() {
 
 void MessageProcess::sendPong() {
     if (!queueOut.write(ETHOSU_CORE_MSG_PONG)) {
-        printf("ERROR: Msg: Failed to write pong response. No mailbox message sent\n");
+        LOG_ERR("Msg: Failed to write pong response. No mailbox message sent\n");
     } else {
         mailbox.sendMessage();
     }
@@ -335,7 +337,7 @@ void MessageProcess::sendVersionRsp() {
     };
 
     if (!queueOut.write(ETHOSU_CORE_MSG_VERSION_RSP, ver)) {
-        printf("ERROR: Failed to write version response. No mailbox message sent\n");
+        LOG_ERR("Msg: Failed to write version response. No mailbox message sent\n");
     } else {
         mailbox.sendMessage();
     }
@@ -389,7 +391,7 @@ void MessageProcess::sendCapabilityRsp(uint64_t userArg) {
 #endif
 
     if (!queueOut.write(ETHOSU_CORE_MSG_CAPABILITIES_RSP, capabilities)) {
-        printf("ERROR: Failed to write capability response. No mailbox message sent\n");
+        LOG_ERR("Failed to write capability response. No mailbox message sent\n");
     } else {
         mailbox.sendMessage();
     }
@@ -405,9 +407,9 @@ void MessageProcess::sndErrorRspAndResetQueue(ethosu_core_msg_err_type type, con
             error.msg[i] = message[i];
         }
     }
-    printf("ERROR: Msg: \"%s\"\n", message);
+    LOG_ERR("Msg: \"%s\"\n", message);
     if (!queueOut.write(ETHOSU_CORE_MSG_ERR, &error)) {
-        printf("ERROR: Msg: Failed to write error response. No mailbox message sent\n");
+        LOG_ERR("Msg: Failed to write error response. No mailbox message sent\n");
         return;
     }
     queueIn.reset();
@@ -445,13 +447,13 @@ void MessageProcess::sendInferenceRsp(uint64_t userArg,
     }
     rsp.pmu_cycle_counter_count = pmuCycleCounterCount;
 
-    printf("Sending inference response. userArg=0x%" PRIx64 ", ofm_count=%" PRIu32 ", status=%" PRIu32 "\n",
-           rsp.user_arg,
-           rsp.ofm_count,
-           rsp.status);
+    LOG_INFO("Sending inference response. userArg=0x%" PRIx64 ", ofm_count=%" PRIu32 ", status=%" PRIu32 "\n",
+             rsp.user_arg,
+             rsp.ofm_count,
+             rsp.status);
 
     if (!queueOut.write(ETHOSU_CORE_MSG_INFERENCE_RSP, rsp)) {
-        printf("ERROR: Msg: Failed to write inference response. No mailbox message sent\n");
+        LOG_ERR("Msg: Failed to write inference response. No mailbox message sent\n");
     } else {
         mailbox.sendMessage();
     }

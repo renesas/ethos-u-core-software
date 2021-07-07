@@ -21,6 +21,6 @@ if (NOT TARGET ethosu_core_driver)
 endif()
 add_library(ethosu_monitor INTERFACE)
 
-target_link_libraries(ethosu_monitor INTERFACE ethosu_core_driver event_recorder)
+target_link_libraries(ethosu_monitor INTERFACE ethosu_core_driver event_recorder ethosu_log)
 target_include_directories(ethosu_monitor INTERFACE include)
 target_sources(ethosu_monitor INTERFACE src/ethosu_monitor.cpp)

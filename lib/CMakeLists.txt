@@ -24,3 +24,6 @@ add_subdirectory(arm_profiler)
 
 # Build ethosu_monitor
 add_subdirectory(ethosu_monitor)
+
+# Build ethosu_logging
+add_subdirectory(ethosu_log)

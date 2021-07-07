@@ -20,4 +20,4 @@ add_library(ethosu_mhu_v2 STATIC)
 target_include_directories(ethosu_mhu_v2 PUBLIC include)
 
 target_sources(ethosu_mhu_v2 PRIVATE src/mhu_v2.cpp)
-target_link_libraries(ethosu_mhu_v2 PRIVATE ethosu_mailbox)
+target_link_libraries(ethosu_mhu_v2 PRIVATE ethosu_mailbox ethosu_log)

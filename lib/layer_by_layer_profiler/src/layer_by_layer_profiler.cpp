@@ -23,6 +23,7 @@
 
 #include <string.h>
 
+#include "ethosu_log.h"
 #include "layer_by_layer_profiler.hpp"
 #include <ethosu_driver.h>
 #include <inttypes.h>
@@ -88,9 +89,9 @@ void LayerByLayerProfiler::EndEvent(uint32_t event_handle) {
     }
 
     if (backend_ == PRINTF) {
-        printf("%s : cycle_cnt : %" PRIu64 " cycles\n",
-               tags_[event_handle],
-               end_ticks_[event_handle] - start_ticks_[event_handle]);
+        LOG("%s : cycle_cnt : %" PRIu64 " cycles\n",
+            tags_[event_handle],
+            end_ticks_[event_handle] - start_ticks_[event_handle]);
     } else {
         EventRecord2(event_id_, (int32_t)event_handle, end_ticks_[event_handle] - start_ticks_[event_handle]);
     }
@@ -112,7 +113,7 @@ void LayerByLayerProfiler::Log() const {
     if (backend_ == PRINTF) {
         for (size_t i = 0; i < num_events_; ++i) {
             uint64_t ticks = end_ticks_[i] - start_ticks_[i];
-            printf("%s took %" PRIu64 " cycles\n", tags_[i], ticks);
+            LOG("%s took %" PRIu64 " cycles", tags_[i], ticks);
         }
     }
 #endif

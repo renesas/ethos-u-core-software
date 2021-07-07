@@ -30,5 +30,8 @@ endif()
 if (TARGET arm_profiler)
     target_link_libraries(inference_process PRIVATE arm_profiler)
 endif()
+if (TARGET ethosu_log)
+    target_link_libraries(inference_process PRIVATE ethosu_log)
+endif()
 
 target_sources(inference_process PRIVATE src/inference_process.cpp)

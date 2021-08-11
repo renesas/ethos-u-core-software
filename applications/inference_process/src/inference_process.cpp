@@ -55,10 +55,15 @@ void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
     LOG("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
     LOG("\"data\":\"");
     for (int i = 0; i < numBytesToPrint - 1; ++i) {
-        if (i % 16 == 0 && i != 0) {
-            LOG("\n");
+        /*
+         * Workaround an issue when compiling with GCC where by
+         * printing only a '\n' the produced global output is wrong.
+         */
+        if (i % 15 == 0 && i != 0) {
+            LOG("0x%02x,\n", output->data.uint8[i]);
+        } else {
+            LOG("0x%02x,", output->data.uint8[i]);
         }
-        LOG("0x%02x,", output->data.uint8[i]);
     }
     LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
     LOG("}");

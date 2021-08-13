@@ -4,6 +4,7 @@
 /openamp
 /rtos/freertos
 /rtos/threadx
+/rtos/zephyr
 /tensorflow
 /tflite_micro
 /cmsis-view

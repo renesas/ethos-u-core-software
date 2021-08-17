@@ -40,7 +40,7 @@ using namespace std;
 namespace {
 
 void tflu_debug_log(const char *s) {
-    LOG_DEBUG("%s", s);
+    LOG("%s", s);
 }
 
 void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {

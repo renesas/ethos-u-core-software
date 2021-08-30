@@ -24,7 +24,7 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #include "arm_profiler.hpp"
-#ifdef ETHOSU
+#ifdef LAYER_BY_LAYER_PROFILER
 #include "layer_by_layer_profiler.hpp"
 #endif
 #include "ethosu_log.h"
@@ -204,7 +204,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
-#ifdef ETHOSU
+#ifdef LAYER_BY_LAYER_PROFILER
     tflite::LayerByLayerProfiler profiler;
 #else
     tflite::ArmProfiler profiler;

@@ -210,7 +210,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     tflite::ArmProfiler profiler;
 #endif
 
-    tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, reporter, &profiler);
+    tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, reporter, nullptr, &profiler);
 
     // Allocate tensors
     TfLiteStatus allocate_status = interpreter.AllocateTensors();

@@ -72,7 +72,6 @@ else()
                           $<$<BOOL:${FLOAT}>:FLOAT=${FLOAT}>
                           BUILD_TYPE=${TFLU_BUILD_TYPE}
                           $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:KERNEL_OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
-                          $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:CORE_OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
                           CMSIS_PATH=${CMSIS_PATH}
                           ETHOSU_DRIVER_PATH=${CORE_DRIVER_PATH}
                           ETHOSU_DRIVER_LIBS=${TFLU_ETHOSU_LIBS}

@@ -16,90 +16,180 @@
 # limitations under the License.
 #
 
-include(ProcessorCount)
-ProcessorCount(J)
+add_library(tflu STATIC)
 
-if (CMAKE_CXX_COMPILER_ID STREQUAL "ARMClang")
-    set(TFLU_TOOLCHAIN "armclang")
-elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    set(TFLU_TOOLCHAIN "gcc")
-else ()
-    message(FATAL_ERROR "No compiler ID is set")
-endif()
-
-get_filename_component(TFLU_TARGET_TOOLCHAIN_ROOT ${CMAKE_C_COMPILER} DIRECTORY)
-
-set(TFLU_TARGET_TOOLCHAIN_ROOT "'${TFLU_TARGET_TOOLCHAIN_ROOT}'/")
 set(TFLU_PATH "${TENSORFLOW_PATH}/tensorflow/lite/micro")
-set(TFLU_GENDIR "${CMAKE_CURRENT_BINARY_DIR}/tflite_micro/")
-set(TFLU_TARGET "cortex_m_generic")
-set(TFLU_TARGET_ARCH ${CMAKE_SYSTEM_PROCESSOR}${CPU_FEATURES}
-    CACHE STRING "Tensorflow Lite for Microcontrollers target architecture")
 set(TFLU_BUILD_TYPE "release" CACHE STRING "Tensorflow Lite Mirco build type, can be release or debug")
-set(TFLU_OPTIMIZATION_LEVEL CACHE STRING "Tensorflow Lite Micro kernel optimization level")
+set(TFLU_OPTIMIZATION_LEVEL "-O2" CACHE STRING "Tensorflow Lite Micro kernel optimization level")
 
+#############################################################################
+# Helpers
+#############################################################################
 
-if (TFLU_PREBUILT_LIBRARY_PATH)
-    set(TFLU_IMPORTED_LIB_PATH "${TFLU_PREBUILT_LIBRARY_PATH}")
-    message(STATUS "Using a prebuilt TensorFlow Lite for Microcontrollers library: ${TFLU_IMPORTED_LIB_PATH}")
-else()
-    if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
-        set(TFLU_ETHOSU_LIBS $<TARGET_FILE:ethosu_core_driver>)
-        # Set preference for ethos-u over cmsis-nn
-        set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
-        set(TFLU_CO_PROCESSOR "ethos_u")
-    elseif(CORE_SOFTWARE_ACCELERATOR STREQUAL CMSIS-NN)
-        set(TFLU_OPTIMIZED_KERNEL_DIR "cmsis_nn")
+include(FetchContent)
+
+# Download third party
+macro(download_third_party target)
+    cmake_parse_arguments(DOWNLOAD "" "URL;URL_MD5;SOURCE_DIR" "" ${ARGN})
+
+    message("Downloading ${DOWNLOAD_URL}")
+
+    FetchContent_Declare(${target}
+                         URL ${DOWNLOAD_URL}
+                         URL_MD5 ${DOWNLOAD_MD5}
+                         SOURCE_DIR ${DOWNLOAD_SOURCE_DIR}
+                         ${PATCH_COMMAND})
+
+    FetchContent_GetProperties(${target})
+    if (NOT ${target}_POPULATED)
+        FetchContent_Populate(${target})
     endif()
+endmacro()
 
-    # Windows: change to relative paths.
-    if (CMAKE_HOST_SYSTEM_NAME STREQUAL Windows)
-        file(RELATIVE_PATH CMSIS_PATH ${TENSORFLOW_PATH} ${CMSIS_PATH})
-        file(RELATIVE_PATH CORE_DRIVER_PATH ${TENSORFLOW_PATH} ${CORE_DRIVER_PATH})
-    endif()
+function(tensorflow_source_exists RESULT TARGET SOURCE)
+    get_target_property(SOURCES ${TARGET} SOURCES)
 
-    # Command and target
-    add_custom_target(tflu_gen ALL
-                  COMMAND make -f ${TFLU_PATH}/tools/make/Makefile third_party_downloads
-                  COMMAND make -j${J} -f ${TFLU_PATH}/tools/make/Makefile microlite
-                          TARGET_TOOLCHAIN_ROOT=${TFLU_TARGET_TOOLCHAIN_ROOT}
-                          TOOLCHAIN=${TFLU_TOOLCHAIN}
-                          GENDIR=${TFLU_GENDIR}
-                          TARGET=${TFLU_TARGET}
-                          TARGET_ARCH=${TFLU_TARGET_ARCH}
-                          OPTIMIZED_KERNEL_DIR="${TFLU_OPTIMIZED_KERNEL_DIR}"
-                          CO_PROCESSOR="${TFLU_CO_PROCESSOR}"
-                          $<$<BOOL:${FLOAT}>:FLOAT=${FLOAT}>
-                          BUILD_TYPE=${TFLU_BUILD_TYPE}
-                          $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:KERNEL_OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
-                          $<$<BOOL:${TFLU_OPTIMIZATION_LEVEL}>:CORE_OPTIMIZATION_LEVEL=${TFLU_OPTIMIZATION_LEVEL}>
-                          CMSIS_PATH=${CMSIS_PATH}
-                          ETHOSU_DRIVER_PATH=${CORE_DRIVER_PATH}
-                          ETHOSU_DRIVER_LIBS=${TFLU_ETHOSU_LIBS}
-                  BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/tensorflow/tensorflow/lite/micro/tools/make/downloads
-                  WORKING_DIRECTORY ${TENSORFLOW_PATH})
+    # Loop over source files already added to this target
+    foreach(TMP ${SOURCES})
+        get_filename_component(SOURCE_NAME ${SOURCE} NAME)
+        get_filename_component(TMP_NAME ${TMP} NAME)
 
-    set(TFLU_IMPORTED_LIB_PATH "${TFLU_GENDIR}/lib/libtensorflow-microlite.a")
+        # Check if file already exists
+        if (${SOURCE_NAME} STREQUAL ${TMP_NAME})
+            set(${RESULT} TRUE PARENT_SCOPE)
+            return()
+        endif()
+    endforeach()
+
+    set(${RESULT} FALSE PARENT_SCOPE)
+endfunction()
+
+function(tensorflow_target_sources_glob TARGET GLOB UNIQUE)
+    foreach (EXPR ${ARGN})
+        # Find files matching globbing expression
+        file(${GLOB} SOURCES ${EXPR})
+
+        # Remove tests
+        list(FILTER SOURCES EXCLUDE REGEX ".*_test\.cc")
+
+        # Add files to target
+        foreach(SOURCE ${SOURCES})
+            tensorflow_source_exists(SOURCE_EXISTS ${TARGET} ${SOURCE})
+            if (NOT ${UNIQUE} OR NOT ${SOURCE_EXISTS})
+                target_sources(${TARGET} PRIVATE ${SOURCE})
+            endif()
+        endforeach()
+    endforeach()
+endfunction()
+
+#############################################################################
+# Download thirdparty
+#############################################################################
+
+# Flatbuffers
+# Synch revision with 'tensorflow/lite/micro/tools/make/flatbuffers_download.sh'
+download_third_party(tensorflow-flatbuffers
+    URL "https://github.com/google/flatbuffers/archive/dca12522a9f9e37f126ab925fd385c807ab4f84e.zip"
+    URL_MD5 aa9adc93eb9b33fa1a2a90969e48baee)
+
+target_include_directories(tflu PUBLIC
+    ${tensorflow-flatbuffers_SOURCE_DIR}/include)
+
+target_compile_definitions(tflu PUBLIC
+    FLATBUFFERS_LOCALE_INDEPENDENT=0)
+
+# Gemlowp
+# Synch revision with 'tensorflow/lite/micro/tools/make/third_party_downloads.inc'
+download_third_party(tensorflow-gemlowp
+    URL "https://github.com/google/gemmlowp/archive/719139ce755a0f31cbf1c37f7f98adcc7fc9f425.zip"
+    URL_MD5 7e8191b24853d75de2af87622ad293ba)
+
+target_include_directories(tflu PUBLIC
+    ${tensorflow-gemlowp_SOURCE_DIR})
+
+# Ruy
+# Synch revision with 'tensorflow/lite/micro/tools/make/third_party_downloads.inc'
+download_third_party(tensorflow-ruy
+    URL "https://github.com/google/ruy/archive/d37128311b445e758136b8602d1bbd2a755e115d.zip"
+    URL_MD5 abf7a91eb90d195f016ebe0be885bb6e)
+
+target_include_directories(tflu PUBLIC
+    ${tensorflow-ruy_SOURCE_DIR})
+
+#############################################################################
+# CMSIS-NN
+#############################################################################
+
+add_subdirectory(${CMSIS_PATH}/CMSIS/NN cmsis_nn)
+
+target_compile_options(cmsis-nn PRIVATE
+    ${TFLU_OPTIMIZATION_LEVEL})
+
+tensorflow_target_sources_glob(tflu GLOB TRUE
+    ${TFLU_PATH}/kernels/cmsis_nn/*.cc)
+
+target_include_directories(tflu PUBLIC
+    ${CMSIS_PATH})
+
+target_compile_definitions(tflu PUBLIC
+    CMSIS_NN)
+
+target_link_libraries(tflu PUBLIC
+    cmsis-nn)
+
+#############################################################################
+# Ethos-U
+#############################################################################
+
+if(TARGET ethosu_core_driver)
+    tensorflow_target_sources_glob(tflu GLOB TRUE
+        ${TFLU_PATH}/kernels/ethos_u/*.cc)
+
+    target_link_libraries(tflu PUBLIC
+        ethosu_core_driver)
 endif()
 
-# Create library and link library to custom target
-add_library(tflu STATIC IMPORTED)
-set_property(TARGET tflu PROPERTY IMPORTED_LOCATION "${TFLU_IMPORTED_LIB_PATH}")
-add_dependencies(tflu tflu_gen)
-target_include_directories(tflu INTERFACE
+#############################################################################
+# Cortex-M generic
+#############################################################################
+
+tensorflow_target_sources_glob(tflu GLOB TRUE
+    ${TFLU_PATH}/cortex_m_generic/*.cc)
+
+target_include_directories(tflu PRIVATE
+    ${TFLU_PATH}/cortex_m_generic)
+
+#############################################################################
+# Tensorflow micro lite
+#############################################################################
+
+tensorflow_target_sources_glob(tflu GLOB TRUE
+    ${TFLU_PATH}/*.cc
+    ${TFLU_PATH}/memory_planner/*.cc
+    ${TFLU_PATH}/kernels/*.cc)
+
+tensorflow_target_sources_glob(tflu GLOB_RECURSE FALSE
+    ${TFLU_PATH}/../c/*.c
+    ${TFLU_PATH}/../core/*.cc
+    ${TFLU_PATH}/../kernels/*.cc
+    ${TFLU_PATH}/../schema/*.cc)
+
+target_include_directories(tflu PUBLIC
     ${TENSORFLOW_PATH})
-target_compile_options(tflu INTERFACE
-    -I${TENSORFLOW_PATH}/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include)
-target_compile_definitions(tflu INTERFACE TF_LITE_MICRO TF_LITE_STATIC_MEMORY)
 
-if(${TFLU_BUILD_TYPE} STREQUAL "release")
-    target_compile_definitions(tflu INTERFACE TF_LITE_STRIP_ERROR_STRINGS)
-endif()
+target_compile_definitions(tflu PUBLIC
+    TF_LITE_STATIC_MEMORY
+    $<$<STREQUAL:${TFLU_BUILD_TYPE},"release">:"NDEBUG;TF_LITE_STRIP_ERROR_STRINGS">
+    $<$<STREQUAL:${TFLU_BUILD_TYPE},"release_with_logs">:"NDEBUG">)
 
-if(CORE_SOFTWARE_ACCELERATOR STREQUAL NPU)
-    target_link_libraries(tflu INTERFACE ethosu_core_driver)
-endif()
+target_compile_options(tflu PRIVATE
+    ${TFLU_OPTIMIZATION_LEVEL}
+    -fno-unwind-tables
+    -ffunction-sections
+    -fdata-sections
+    -fmessage-length=0
+    -funsigned-char
+    "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti;-fno-exceptions;-fno-threadsafe-statics>")
 
 # Install libraries and header files
-get_target_property(TFLU_IMPORTED_LOCATION tflu IMPORTED_LOCATION)
-install(FILES ${TFLU_IMPORTED_LOCATION} DESTINATION "lib")
+install(TARGETS tflu DESTINATION "lib")

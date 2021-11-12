@@ -197,12 +197,12 @@ void MHUv2::printAIDR(bool tx, bool rx) {
     if (tx) {
         aidr = getTxAIDR();
         a    = reinterpret_cast<struct aidr_t *>(&aidr);
-        LOG_INFO("TX MHUv2 reports: Major rev: %d, Minor rev: %d\n", a->ARCH_MAJOR_REV, a->ARCH_MINOR_REV);
+        LOG_INFO("TX MHUv2 reports: Major rev: %d, Minor rev: %d", a->ARCH_MAJOR_REV, a->ARCH_MINOR_REV);
     }
     if (rx) {
         aidr = getRxAIDR();
         a    = reinterpret_cast<struct aidr_t *>(&aidr);
-        LOG_INFO("RX MHUv2 reports: Major rev: %d, Minor rev: %d\n", a->ARCH_MAJOR_REV, a->ARCH_MINOR_REV);
+        LOG_INFO("RX MHUv2 reports: Major rev: %d, Minor rev: %d", a->ARCH_MAJOR_REV, a->ARCH_MINOR_REV);
     }
 }
 

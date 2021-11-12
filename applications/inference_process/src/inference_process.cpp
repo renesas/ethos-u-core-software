@@ -75,7 +75,7 @@ bool copyOutput(const TfLiteTensor &src, InferenceProcess::DataPtr &dst) {
     }
 
     if (src.bytes > dst.size) {
-        LOG_ERR("Tensor size mismatch (bytes): actual=%d, expected%d.\n", src.bytes, dst.size);
+        LOG_ERR("Tensor size mismatch (bytes): actual=%d, expected%d.", src.bytes, dst.size);
         return true;
     }
 
@@ -185,7 +185,7 @@ bool InferenceProcess::push(const InferenceJob &job) {
 }
 
 bool InferenceProcess::runJob(InferenceJob &job) {
-    LOG_INFO("Running inference job: %s\n", job.name.c_str());
+    LOG_INFO("Running inference job: %s", job.name.c_str());
 
     // Register debug log callback for profiling
     RegisterDebugLogCallback(tflu_debug_log);
@@ -196,7 +196,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Get model handle and verify that the version is correct
     const tflite::Model *model = ::tflite::GetModel(job.networkModel.data);
     if (model->version() != TFLITE_SCHEMA_VERSION) {
-        LOG_ERR("Model schema version unsupported: version=%" PRIu32 ", supported=%d.\n",
+        LOG_ERR("Model schema version unsupported: version=%" PRIu32 ", supported=%d.",
                 model->version(),
                 TFLITE_SCHEMA_VERSION);
         return true;
@@ -215,7 +215,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Allocate tensors
     TfLiteStatus allocate_status = interpreter.AllocateTensors();
     if (allocate_status != kTfLiteOk) {
-        LOG_ERR("Failed to allocate tensors for inference: job=%s\n", job.name.c_str());
+        LOG_ERR("Failed to allocate tensors for inference: job=%s", job.name.c_str());
         return true;
     }
 
@@ -229,7 +229,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         }
     }
     if (job.input.size() != inputTensors.size()) {
-        LOG_ERR("Number of input buffers does not match number of non empty network tensors: input=%zu, network=%zu\n",
+        LOG_ERR("Number of input buffers does not match number of non empty network tensors: input=%zu, network=%zu",
                 job.input.size(),
                 inputTensors.size());
         return true;
@@ -241,7 +241,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         const TfLiteTensor *tensor = inputTensors[i];
 
         if (input.size != tensor->bytes) {
-            LOG_ERR("Job input size does not match network input size: job=%s, index=%zu, input=%zu, network=%u\n",
+            LOG_ERR("Job input size does not match network input size: job=%s, index=%zu, input=%zu, network=%u",
                     job.name.c_str(),
                     i,
                     input.size,
@@ -255,7 +255,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Run the inference
     TfLiteStatus invoke_status = interpreter.Invoke();
     if (invoke_status != kTfLiteOk) {
-        LOG_ERR("Invoke failed for inference: job=%s\n", job.name.c_str());
+        LOG_ERR("Invoke failed for inference: job=%s", job.name.c_str());
         return true;
     }
 
@@ -270,7 +270,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Copy output data
     if (job.output.size() > 0) {
         if (interpreter.outputs_size() != job.output.size()) {
-            LOG_ERR("Output size mismatch: job=%zu, network=%u\n", job.output.size(), interpreter.outputs_size());
+            LOG_ERR("Output size mismatch: job=%zu, network=%u", job.output.size(), interpreter.outputs_size());
             return true;
         }
 
@@ -300,7 +300,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     if (job.expectedOutput.size() > 0) {
         if (job.expectedOutput.size() != interpreter.outputs_size()) {
-            LOG_ERR("Expected number of output tensors mismatch: job=%s, expected=%zu, network=%zu\n",
+            LOG_ERR("Expected number of output tensors mismatch: job=%s, expected=%zu, network=%zu",
                     job.name.c_str(),
                     job.expectedOutput.size(),
                     interpreter.outputs_size());
@@ -312,7 +312,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
             const TfLiteTensor *output = interpreter.output(i);
 
             if (expected.size != output->bytes) {
-                LOG_ERR("Expected output tensor size mismatch: job=%s, index=%u, expected=%zu, network=%zu\n",
+                LOG_ERR("Expected output tensor size mismatch: job=%s, index=%u, expected=%zu, network=%zu",
                         job.name.c_str(),
                         i,
                         expected.size,
@@ -335,7 +335,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         }
     }
 
-    LOG_INFO("Finished running job: %s\n", job.name.c_str());
+    LOG_INFO("Finished running job: %s", job.name.c_str());
 
     return false;
 } // namespace InferenceProcess
@@ -350,7 +350,7 @@ bool InferenceProcess::run(bool exitOnEmpty) {
 
         if (empty) {
             if (exitOnEmpty) {
-                LOG_INFO("Exit from InferenceProcess::run() due to empty job queue\n");
+                LOG_INFO("Exit from InferenceProcess::run() due to empty job queue");
                 break;
             }
 

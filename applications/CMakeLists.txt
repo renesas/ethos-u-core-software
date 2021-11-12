@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -17,10 +17,6 @@
 #
 
 add_library(ethosu_applications INTERFACE)
-
-# Build message process
-add_subdirectory(message_process)
-target_link_libraries(ethosu_applications INTERFACE message_process)
 
 # Build inference process
 add_subdirectory(inference_process)

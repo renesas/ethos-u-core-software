@@ -83,11 +83,9 @@ add_subdirectory(lib)
 # Build applications
 add_subdirectory(applications)
 
-# Build drivers
-add_subdirectory(drivers)
 
 # Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu ethosu_applications ethosu_drivers)
+target_link_libraries(ethosu_core INTERFACE tflu ethosu_applications)
 
 message(STATUS "*******************************************************")
 message(STATUS "PROJECT_NAME                           : ${PROJECT_NAME}")

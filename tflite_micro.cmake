@@ -120,22 +120,24 @@ target_include_directories(tflu PUBLIC
 # CMSIS-NN
 #############################################################################
 
-add_subdirectory(${CMSIS_PATH}/CMSIS/NN cmsis_nn)
+if (NOT ${CORE_SOFTWARE_ACCELERATOR} STREQUAL "CPU")
+    add_subdirectory(${CMSIS_PATH}/CMSIS/NN cmsis_nn)
 
-target_compile_options(cmsis-nn PRIVATE
-    ${TFLU_OPTIMIZATION_LEVEL})
+    target_compile_options(cmsis-nn PRIVATE
+        ${TFLU_OPTIMIZATION_LEVEL})
 
-tensorflow_target_sources_glob(tflu GLOB TRUE
-    ${TFLU_PATH}/kernels/cmsis_nn/*.cc)
+    tensorflow_target_sources_glob(tflu GLOB TRUE
+        ${TFLU_PATH}/kernels/cmsis_nn/*.cc)
 
-target_include_directories(tflu PUBLIC
-    ${CMSIS_PATH})
+    target_include_directories(tflu PUBLIC
+        ${CMSIS_PATH})
 
-target_compile_definitions(tflu PUBLIC
-    CMSIS_NN)
+    target_compile_definitions(tflu PUBLIC
+        CMSIS_NN)
 
-target_link_libraries(tflu PUBLIC
-    cmsis-nn)
+    target_link_libraries(tflu PUBLIC
+        cmsis-nn)
+endif()
 
 #############################################################################
 # Ethos-U

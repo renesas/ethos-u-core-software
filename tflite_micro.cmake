@@ -184,14 +184,34 @@ target_compile_definitions(tflu PUBLIC
     $<$<STREQUAL:${TFLU_BUILD_TYPE},"release">:"NDEBUG;TF_LITE_STRIP_ERROR_STRINGS">
     $<$<STREQUAL:${TFLU_BUILD_TYPE},"release_with_logs">:"NDEBUG">)
 
-target_compile_options(tflu PRIVATE
-    ${TFLU_OPTIMIZATION_LEVEL}
-    -fno-unwind-tables
-    -ffunction-sections
-    -fdata-sections
-    -fmessage-length=0
-    -funsigned-char
-    "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti;-fno-exceptions;-fno-threadsafe-statics>")
+target_compile_options(tflu
+    PRIVATE
+        ${TFLU_OPTIMIZATION_LEVEL}
+        -fno-unwind-tables
+        -ffunction-sections
+        -fdata-sections
+        -fmessage-length=0
+        -funsigned-char
+        "$<$<COMPILE_LANGUAGE:CXX>:-fno-rtti;-fno-exceptions;-fno-threadsafe-statics>"
+
+        -Wall
+        -Wextra
+
+        -Wdouble-promotion
+        -Wmissing-field-initializers
+        -Wshadow
+        -Wstrict-aliasing
+        -Wswitch
+        -Wunused-variable
+        -Wunused-function
+        -Wvla
+
+    PUBLIC
+        -Wno-cast-align
+        -Wno-null-dereference
+        -Wno-unused-parameter
+        -Wno-switch-default
+)
 
 # Install libraries and header files
 install(TARGETS tflu DESTINATION "lib")

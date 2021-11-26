@@ -18,6 +18,7 @@
 
 #include "ethosu_monitor.hpp"
 #include "ethosu_log.h"
+#include <inttypes.h>
 #include <stdio.h>
 
 EthosUMonitor::EthosUMonitor(std::vector<int32_t> __eventRecordIds, Backend __backend) :
@@ -34,7 +35,7 @@ void EthosUMonitor::monitorSample(ethosu_driver *drv) {
             break;
         case PRINTF:
         default:
-            LOG("ethosu_pmu_cntr%d : %u\n", i, eventCount[i]);
+            LOG("ethosu_pmu_cntr%zd : %" PRIu32 "\n", i, eventCount[i]);
         }
     }
 }

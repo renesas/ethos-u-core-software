@@ -43,7 +43,45 @@ void tflu_debug_log(const char *s) {
     LOG("%s", s);
 }
 
+class Crc {
+public:
+    constexpr Crc() : table() {
+        uint32_t poly = 0xedb88320;
+
+        for (uint32_t i = 0; i < 256; i++) {
+            uint32_t crc = i;
+
+            for (int j = 0; j < 8; j++) {
+                if (crc & 1) {
+                    crc = poly ^ (crc >> 1);
+                } else {
+                    crc >>= 1;
+                }
+            }
+
+            table[i] = crc;
+        }
+    }
+
+    uint32_t crc32(const void *data, const size_t length, uint32_t init = 0) const {
+        uint32_t crc = init ^ 0xffffffff;
+
+        const uint8_t *v = static_cast<const uint8_t *>(data);
+
+        for (size_t i = 0; i < length; i++) {
+            crc = table[(crc ^ v[i]) & 0xff] ^ (crc >> 8);
+        }
+
+        return crc ^ 0xffffffff;
+    }
+
+private:
+    uint32_t table[256];
+};
+
 void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
+    constexpr auto crc = Crc();
+    const uint32_t output_crc32 = crc.crc32(output->data.data, output->bytes);
     const int numBytesToPrint = min(output->bytes, bytesToPrint);
     int dims_size             = output->dims->size;
     LOG("{\n");
@@ -53,19 +91,26 @@ void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
     }
     LOG("%d],\n", output->dims->data[dims_size - 1]);
     LOG("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
-    LOG("\"data\":\"");
-    for (int i = 0; i < numBytesToPrint - 1; ++i) {
-        /*
-         * Workaround an issue when compiling with GCC where by
-         * printing only a '\n' the produced global output is wrong.
-         */
-        if (i % 15 == 0 && i != 0) {
-            LOG("0x%02x,\n", output->data.uint8[i]);
-        } else {
-            LOG("0x%02x,", output->data.uint8[i]);
+    if (numBytesToPrint)
+    {
+        LOG("\"crc32\": \"%08" PRIx32 "\",\n", output_crc32);
+        LOG("\"data\":\"");
+        for (int i = 0; i < numBytesToPrint - 1; ++i) {
+            /*
+            * Workaround an issue when compiling with GCC where by
+            * printing only a '\n' the produced global output is wrong.
+            */
+            if (i % 15 == 0 && i != 0) {
+                LOG("0x%02x,\n", output->data.uint8[i]);
+            } else {
+                LOG("0x%02x,", output->data.uint8[i]);
+            }
         }
+        LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
     }
-    LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
+    else {
+        LOG("\"crc32\": \"%08" PRIx32 "\"\n", output_crc32);
+    }
     LOG("}");
 }
 
@@ -281,22 +326,20 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         }
     }
 
-    if (job.numBytesToPrint > 0) {
-        // Print all of the output data, or the first NUM_BYTES_TO_PRINT bytes,
-        // whichever comes first as well as the output shape.
-        LOG("num_of_outputs: %d\n", interpreter.outputs_size());
-        LOG("output_begin\n");
-        LOG("[\n");
-        for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
-            TfLiteTensor *output = interpreter.output(i);
-            print_output_data(output, job.numBytesToPrint);
-            if (i != interpreter.outputs_size() - 1) {
-                LOG(",\n");
-            }
+    // Print all of the output data, or the first NUM_BYTES_TO_PRINT bytes,
+    // whichever comes first as well as the output shape.
+    LOG("num_of_outputs: %d\n", interpreter.outputs_size());
+    LOG("output_begin\n");
+    LOG("[\n");
+    for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
+        TfLiteTensor *output = interpreter.output(i);
+        print_output_data(output, job.numBytesToPrint);
+        if (i != interpreter.outputs_size() - 1) {
+            LOG(",\n");
         }
-        LOG("]\n");
-        LOG("output_end\n");
     }
+    LOG("]\n");
+    LOG("output_end\n");
 
     if (job.expectedOutput.size() > 0) {
         if (job.expectedOutput.size() != interpreter.outputs_size()) {

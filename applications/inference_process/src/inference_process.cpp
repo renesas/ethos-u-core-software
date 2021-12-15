@@ -192,40 +192,8 @@ void InferenceJob::clean() {
     }
 }
 
-// NOTE: Adding code for get_lock & free_lock with some corrections from
-// http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0321a/BIHEJCHB.html
-// TODO: check correctness?
-void InferenceProcess::getLock() {
-    int status = 0;
-
-    do {
-        // Wait until lock_var is free
-        while (__LDREXW(&lock) != 0)
-            ;
-
-        // Try to set lock_var
-        status = __STREXW(1, &lock);
-    } while (status != 0);
-
-    // Do not start any other memory access until memory barrier is completed
-    __DMB();
-}
-
-// TODO: check correctness?
-void InferenceProcess::freeLock() {
-    // Ensure memory operations completed before releasing lock
-    __DMB();
-
-    lock = 0;
-}
-
-bool InferenceProcess::push(const InferenceJob &job) {
-    getLock();
-    inferenceJobQueue.push(job);
-    freeLock();
-
-    return true;
-}
+InferenceProcess::InferenceProcess(uint8_t *_tensorArena, size_t _tensorArenaSize) :
+    tensorArena(_tensorArena), tensorArenaSize(_tensorArenaSize) {}
 
 bool InferenceProcess::runJob(InferenceJob &job) {
     LOG_INFO("Running inference job: %s", job.name.c_str());
@@ -382,37 +350,6 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     LOG_INFO("Finished running job: %s", job.name.c_str());
 
     return false;
-} // namespace InferenceProcess
-
-bool InferenceProcess::run(bool exitOnEmpty) {
-    bool anyJobFailed = false;
-
-    while (true) {
-        getLock();
-        bool empty = inferenceJobQueue.empty();
-        freeLock();
-
-        if (empty) {
-            if (exitOnEmpty) {
-                LOG_INFO("Exit from InferenceProcess::run() due to empty job queue");
-                break;
-            }
-
-            continue;
-        }
-
-        getLock();
-        InferenceJob job = inferenceJobQueue.front();
-        inferenceJobQueue.pop();
-        freeLock();
-
-        if (runJob(job)) {
-            anyJobFailed = true;
-            continue;
-        }
-    }
-
-    return anyJobFailed;
 }
 
 } // namespace InferenceProcess

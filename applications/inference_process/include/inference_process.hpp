@@ -43,7 +43,7 @@ struct InferenceJob {
     std::vector<DataPtr> expectedOutput;
     size_t numBytesToPrint;
     std::vector<uint8_t> pmuEventConfig;
-    uint32_t pmuCycleCounterEnable;
+    bool pmuCycleCounterEnable;
     std::vector<uint32_t> pmuEventCount;
     uint64_t pmuCycleCounterCount;
 
@@ -55,7 +55,7 @@ struct InferenceJob {
                  const std::vector<DataPtr> &expectedOutput,
                  size_t numBytesToPrint,
                  const std::vector<uint8_t> &pmuEventConfig,
-                 const uint32_t pmuCycleCounterEnable);
+                 const bool pmuCycleCounterEnable);
 
     void invalidate();
     void clean();

@@ -80,10 +80,10 @@ private:
 };
 
 void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
-    constexpr auto crc = Crc();
+    constexpr auto crc          = Crc();
     const uint32_t output_crc32 = crc.crc32(output->data.data, output->bytes);
-    const int numBytesToPrint = min(output->bytes, bytesToPrint);
-    int dims_size             = output->dims->size;
+    const int numBytesToPrint   = min(output->bytes, bytesToPrint);
+    int dims_size               = output->dims->size;
     LOG("{\n");
     LOG("\"dims\": [%d,", dims_size);
     for (int i = 0; i < output->dims->size - 1; ++i) {
@@ -91,15 +91,14 @@ void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
     }
     LOG("%d],\n", output->dims->data[dims_size - 1]);
     LOG("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
-    if (numBytesToPrint)
-    {
+    if (numBytesToPrint) {
         LOG("\"crc32\": \"%08" PRIx32 "\",\n", output_crc32);
         LOG("\"data\":\"");
         for (int i = 0; i < numBytesToPrint - 1; ++i) {
             /*
-            * Workaround an issue when compiling with GCC where by
-            * printing only a '\n' the produced global output is wrong.
-            */
+             * Workaround an issue when compiling with GCC where by
+             * printing only a '\n' the produced global output is wrong.
+             */
             if (i % 15 == 0 && i != 0) {
                 LOG("0x%02x,\n", output->data.uint8[i]);
             } else {
@@ -107,8 +106,7 @@ void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
             }
         }
         LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
-    }
-    else {
+    } else {
         LOG("\"crc32\": \"%08" PRIx32 "\"\n", output_crc32);
     }
     LOG("}");
@@ -156,7 +154,7 @@ InferenceJob::InferenceJob(const string &_name,
                            const vector<DataPtr> &_expectedOutput,
                            size_t _numBytesToPrint,
                            const vector<uint8_t> &_pmuEventConfig,
-                           const uint32_t _pmuCycleCounterEnable) :
+                           const bool _pmuCycleCounterEnable) :
     name(_name),
     networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
     numBytesToPrint(_numBytesToPrint), pmuEventConfig(_pmuEventConfig), pmuCycleCounterEnable(_pmuCycleCounterEnable),
@@ -250,7 +248,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
 #ifdef LAYER_BY_LAYER_PROFILER
-    tflite::LayerByLayerProfiler profiler;
+    tflite::LayerByLayerProfiler profiler(job.pmuEventConfig, job.pmuCycleCounterEnable);
 #else
     tflite::ArmProfiler profiler;
 #endif
@@ -308,9 +306,12 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     LOG("Inference runtime: %u cycles\n", (unsigned int)profiler.GetTotalTicks());
 
-    if (job.pmuCycleCounterEnable != 0) {
-        job.pmuCycleCounterCount = profiler.GetTotalTicks();
+#ifdef LAYER_BY_LAYER_PROFILER
+    if (job.pmuCycleCounterEnable) {
+        job.pmuCycleCounterCount = profiler.GetPmuCycleCounterCount();
     }
+    job.pmuEventCount.assign(profiler.GetPmuEventCount().begin(), profiler.GetPmuEventCount().end());
+#endif
 
     // Copy output data
     if (job.output.size() > 0) {

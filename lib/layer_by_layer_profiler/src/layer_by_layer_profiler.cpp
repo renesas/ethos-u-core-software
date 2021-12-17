@@ -39,17 +39,18 @@ uint64_t GetCurrentEthosuTicks(struct ethosu_driver *drv) {
 
 namespace tflite {
 
-LayerByLayerProfiler::LayerByLayerProfiler(size_t max_events, Backend backend, int32_t event_id) :
-    max_events_(max_events), backend_(backend), event_id_(event_id), num_events_(0) {
+LayerByLayerProfiler::LayerByLayerProfiler(const std::vector<uint8_t> &event_config,
+                                           bool pmu_cycle_counter_enable,
+                                           size_t max_events,
+                                           Backend backend,
+                                           int32_t event_id) :
+    pmu_event_config(event_config),
+    pmu_event_count(), pmu_cycle_counter_enable(pmu_cycle_counter_enable), pmu_cycle_counter_count(0),
+    max_events_(max_events), backend(backend), event_id(event_id), num_events_(0) {
 
-    tags_        = std::make_unique<const char *[]>(max_events_);
-    start_ticks_ = std::make_unique<uint64_t[]>(max_events_);
-    end_ticks_   = std::make_unique<uint64_t[]>(max_events_);
-
-    struct ethosu_driver *drv = ethosu_reserve_driver();
-    ETHOSU_PMU_CNTR_Enable(drv, ETHOSU_PMU_CCNT_Msk);
-    ETHOSU_PMU_CYCCNT_Reset(drv);
-    ethosu_release_driver(drv);
+    tags_        = std::make_unique<const char *[]>(max_events);
+    start_ticks_ = std::make_unique<uint64_t[]>(max_events);
+    end_ticks_   = std::make_unique<uint64_t[]>(max_events);
 }
 
 // NOTE: THIS PROFILER ONLY WORKS ON SYSTEMS WITH 1 NPU
@@ -62,17 +63,44 @@ uint32_t LayerByLayerProfiler::BeginEvent(const char *tag) {
     tags_[num_events_] = tag;
 
     if (strcmp("ethos-u", tag) == 0) {
-        struct ethosu_driver *ethosu_drv = ethosu_reserve_driver();
-        ETHOSU_PMU_CYCCNT_Reset(ethosu_drv);
-        ETHOSU_PMU_PMCCNTR_CFG_Set_Start_Event(ethosu_drv, ETHOSU_PMU_NPU_ACTIVE);
-        ETHOSU_PMU_PMCCNTR_CFG_Set_Stop_Event(ethosu_drv, ETHOSU_PMU_NPU_IDLE);
-        start_ticks_[num_events_] = GetCurrentEthosuTicks(ethosu_drv);
-        ethosu_release_driver(ethosu_drv);
+        struct ethosu_driver *drv = ethosu_reserve_driver();
+        size_t numEventCounters   = ETHOSU_PMU_Get_NumEventCounters();
+
+        if (pmu_event_config.size() > numEventCounters) {
+            LOG_WARN("PMU event config list is bigger (%lu) than available PMU event counters (%lu)",
+                     pmu_event_config.size(),
+                     numEventCounters);
+            LOG_WARN("PMU event config list will be truncated");
+            pmu_event_config.resize(numEventCounters);
+        }
+        // Enable PMU
+        ETHOSU_PMU_Enable(drv);
+
+        for (size_t i = 0; i < pmu_event_config.size(); i++) {
+            ETHOSU_PMU_Set_EVTYPER(drv, i, static_cast<ethosu_pmu_event_type>(pmu_event_config[i]));
+        }
+
+        ETHOSU_PMU_CNTR_Enable(drv, (1 << pmu_event_config.size()) - 1);
+        ETHOSU_PMU_EVCNTR_ALL_Reset(drv);
+
+        // Configure the cycle counter
+        if (pmu_cycle_counter_enable) {
+            ETHOSU_PMU_CNTR_Disable(drv, ETHOSU_PMU_CCNT_Msk);
+            ETHOSU_PMU_CYCCNT_Reset(drv);
+
+            ETHOSU_PMU_PMCCNTR_CFG_Set_Stop_Event(drv, ETHOSU_PMU_NPU_IDLE);
+            ETHOSU_PMU_PMCCNTR_CFG_Set_Start_Event(drv, ETHOSU_PMU_NPU_ACTIVE);
+
+            ETHOSU_PMU_CNTR_Enable(drv, ETHOSU_PMU_CCNT_Msk);
+        }
+        start_ticks_[num_events_] = 0; // Hardware cycle counter has been reset above, thus starts at 0
+        ethosu_release_driver(drv);
     } else {
         start_ticks_[num_events_] = GetCurrentTimeTicks();
     }
 
-    end_ticks_[num_events_] = start_ticks_[num_events_] - 1;
+    end_ticks_[num_events_] =
+        start_ticks_[num_events_]; // NOTE: In case an EndEvent() doesn't trigger, cycles reports as 0
     return num_events_++;
 }
 
@@ -81,19 +109,42 @@ void LayerByLayerProfiler::EndEvent(uint32_t event_handle) {
     TFLITE_DCHECK(event_handle < max_events_);
 
     if (strcmp("ethos-u", tags_[event_handle]) == 0) {
-        struct ethosu_driver *ethosu_drv = ethosu_reserve_driver();
-        end_ticks_[event_handle]         = GetCurrentEthosuTicks(ethosu_drv);
-        ethosu_release_driver(ethosu_drv);
+        struct ethosu_driver *drv = ethosu_reserve_driver();
+
+        end_ticks_[event_handle] = GetCurrentEthosuTicks(drv);
+        // Get the cycle count
+        if (pmu_cycle_counter_enable) {
+            pmu_cycle_counter_count = end_ticks_[event_handle];
+        }
+
+        // Save the PMU counter values
+        // NOTE: If multiple ethos-u layers, only the latest will be saved
+        pmu_event_count.resize(pmu_event_config.size());
+        for (size_t i = 0; i < pmu_event_config.size(); i++) {
+            pmu_event_count[i] = ETHOSU_PMU_Get_EVCNTR(drv, i);
+        }
+
+        // Shut down the PMU
+        ETHOSU_PMU_Disable(drv);
+
+        ethosu_release_driver(drv);
     } else {
         end_ticks_[event_handle] = GetCurrentTimeTicks();
     }
 
-    if (backend_ == PRINTF) {
-        LOG("%s : cycle_cnt : %" PRIu64 " cycles\n",
-            tags_[event_handle],
-            end_ticks_[event_handle] - start_ticks_[event_handle]);
+    if (backend == PRINTF) {
+        if (strcmp("ethos-u", tags_[event_handle]) == 0) {
+            for (size_t i = 0; i < pmu_event_count.size(); i++) {
+                LOG("ethos-u : ethosu_pmu_cntr%lu : %u\n", i, pmu_event_count[i]);
+            }
+            LOG("ethos-u : cycle_cnt : %" PRIu64 " cycles\n", pmu_cycle_counter_count);
+        } else {
+            LOG("%s : cycle_cnt : %" PRIu64 " cycles\n",
+                tags_[event_handle],
+                end_ticks_[event_handle] - start_ticks_[event_handle]);
+        }
     } else {
-        EventRecord2(event_id_, (int32_t)event_handle, end_ticks_[event_handle] - start_ticks_[event_handle]);
+        EventRecord2(event_id, (int32_t)event_handle, end_ticks_[event_handle] - start_ticks_[event_handle]);
     }
 }
 
@@ -107,10 +158,18 @@ uint64_t LayerByLayerProfiler::GetTotalTicks() const {
     return ticks;
 }
 
+uint64_t LayerByLayerProfiler::GetPmuCycleCounterCount() const {
+    return pmu_cycle_counter_count;
+}
+
+const std::vector<uint32_t> &LayerByLayerProfiler::GetPmuEventCount() const {
+    return pmu_event_count;
+}
+
 void LayerByLayerProfiler::Log() const {
 
 #if !defined(TF_LITE_STRIP_ERROR_STRINGS)
-    if (backend_ == PRINTF) {
+    if (backend == PRINTF) {
         for (size_t i = 0; i < num_events_; ++i) {
             uint64_t ticks = end_ticks_[i] - start_ticks_[i];
             LOG("%s took %" PRIu64 " cycles", tags_[i], ticks);

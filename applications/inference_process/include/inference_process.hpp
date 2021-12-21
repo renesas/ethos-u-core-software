@@ -24,6 +24,14 @@
 #include <string>
 #include <vector>
 
+struct TfLiteTensor;
+
+namespace tflite {
+// Forward declarations
+class MicroInterpreter;
+class MicroResourceVariables;
+} // namespace tflite
+
 namespace InferenceProcess {
 struct DataPtr {
     void *data;
@@ -33,6 +41,9 @@ struct DataPtr {
 
     void invalidate();
     void clean();
+
+    char *begin() const;
+    char *end() const;
 };
 
 struct InferenceJob {
@@ -68,6 +79,13 @@ public:
     bool runJob(InferenceJob &job);
 
 private:
+    static bool copyIfm(InferenceJob &job, tflite::MicroInterpreter &interpreter);
+    static bool copyOfm(InferenceJob &job, tflite::MicroInterpreter &interpreter);
+    static bool compareOfm(InferenceJob &job, tflite::MicroInterpreter &interpreter);
+    static void printJob(InferenceJob &job, tflite::MicroInterpreter &interpreter);
+    static void printOutputTensor(TfLiteTensor *output, size_t bytesToPrint);
+    static void tfluDebugLog(const char *s);
+
     uint8_t *tensorArena;
     const size_t tensorArenaSize;
 };

@@ -38,7 +38,7 @@ public:
                          int32_t event_id = EventID(EventLevelError, EvtStatistics_No, EventRecordNone));
     uint32_t BeginEvent(const char *tag);
     void EndEvent(uint32_t event_handle);
-    uint64_t GetTotalTicks() const;
+    int32_t GetTotalTicks() const;
     void Log() const;
 
     uint64_t GetPmuCycleCounterCount() const;

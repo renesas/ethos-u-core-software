@@ -40,13 +40,13 @@ uint64_t GetCurrentEthosuTicks(struct ethosu_driver *drv) {
 namespace tflite {
 
 LayerByLayerProfiler::LayerByLayerProfiler(const std::vector<uint8_t> &event_config,
-                                           bool pmu_cycle_counter_enable,
+                                           bool _pmu_cycle_counter_enable,
                                            size_t max_events,
-                                           Backend backend,
-                                           int32_t event_id) :
+                                           Backend _backend,
+                                           int32_t _event_id) :
     pmu_event_config(event_config),
-    pmu_event_count(), pmu_cycle_counter_enable(pmu_cycle_counter_enable), pmu_cycle_counter_count(0),
-    max_events_(max_events), backend(backend), event_id(event_id), num_events_(0) {
+    pmu_event_count(), pmu_cycle_counter_enable(_pmu_cycle_counter_enable), pmu_cycle_counter_count(0),
+    max_events_(max_events), backend(_backend), event_id(_event_id), num_events_(0) {
 
     tags_        = std::make_unique<const char *[]>(max_events);
     start_ticks_ = std::make_unique<uint64_t[]>(max_events);
@@ -67,7 +67,7 @@ uint32_t LayerByLayerProfiler::BeginEvent(const char *tag) {
         size_t numEventCounters   = ETHOSU_PMU_Get_NumEventCounters();
 
         if (pmu_event_config.size() > numEventCounters) {
-            LOG_WARN("PMU event config list is bigger (%lu) than available PMU event counters (%lu)",
+            LOG_WARN("PMU event config list is bigger (%zu) than available PMU event counters (%zu)",
                      pmu_event_config.size(),
                      numEventCounters);
             LOG_WARN("PMU event config list will be truncated");
@@ -135,7 +135,7 @@ void LayerByLayerProfiler::EndEvent(uint32_t event_handle) {
     if (backend == PRINTF) {
         if (strcmp("ethos-u", tags_[event_handle]) == 0) {
             for (size_t i = 0; i < pmu_event_count.size(); i++) {
-                LOG("ethos-u : ethosu_pmu_cntr%lu : %u\n", i, pmu_event_count[i]);
+                LOG("ethos-u : ethosu_pmu_cntr%zu : %" PRIu32 "\n", i, pmu_event_count[i]);
             }
             LOG("ethos-u : cycle_cnt : %" PRIu64 " cycles\n", pmu_cycle_counter_count);
         } else {
@@ -148,11 +148,11 @@ void LayerByLayerProfiler::EndEvent(uint32_t event_handle) {
     }
 }
 
-uint64_t LayerByLayerProfiler::GetTotalTicks() const {
-    uint64_t ticks = 0;
+int32_t LayerByLayerProfiler::GetTotalTicks() const {
+    int32_t ticks = 0;
 
     for (size_t i = 0; i < num_events_; ++i) {
-        ticks += end_ticks_[i] - start_ticks_[i];
+        ticks += static_cast<int32_t>(end_ticks_[i] - start_ticks_[i]);
     }
 
     return ticks;

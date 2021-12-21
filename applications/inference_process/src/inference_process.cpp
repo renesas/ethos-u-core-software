@@ -39,10 +39,6 @@ using namespace std;
 
 namespace {
 
-void tflu_debug_log(const char *s) {
-    LOG("%s", s);
-}
-
 class Crc {
 public:
     constexpr Crc() : table() {
@@ -79,55 +75,6 @@ private:
     uint32_t table[256];
 };
 
-void print_output_data(TfLiteTensor *output, size_t bytesToPrint) {
-    constexpr auto crc          = Crc();
-    const uint32_t output_crc32 = crc.crc32(output->data.data, output->bytes);
-    const int numBytesToPrint   = min(output->bytes, bytesToPrint);
-    int dims_size               = output->dims->size;
-    LOG("{\n");
-    LOG("\"dims\": [%d,", dims_size);
-    for (int i = 0; i < output->dims->size - 1; ++i) {
-        LOG("%d,", output->dims->data[i]);
-    }
-    LOG("%d],\n", output->dims->data[dims_size - 1]);
-    LOG("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
-    if (numBytesToPrint) {
-        LOG("\"crc32\": \"%08" PRIx32 "\",\n", output_crc32);
-        LOG("\"data\":\"");
-        for (int i = 0; i < numBytesToPrint - 1; ++i) {
-            /*
-             * Workaround an issue when compiling with GCC where by
-             * printing only a '\n' the produced global output is wrong.
-             */
-            if (i % 15 == 0 && i != 0) {
-                LOG("0x%02x,\n", output->data.uint8[i]);
-            } else {
-                LOG("0x%02x,", output->data.uint8[i]);
-            }
-        }
-        LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
-    } else {
-        LOG("\"crc32\": \"%08" PRIx32 "\"\n", output_crc32);
-    }
-    LOG("}");
-}
-
-bool copyOutput(const TfLiteTensor &src, InferenceProcess::DataPtr &dst) {
-    if (dst.data == nullptr) {
-        return false;
-    }
-
-    if (src.bytes > dst.size) {
-        LOG_ERR("Tensor size mismatch (bytes): actual=%d, expected%d.", src.bytes, dst.size);
-        return true;
-    }
-
-    copy(src.data.uint8, src.data.uint8 + src.bytes, static_cast<uint8_t *>(dst.data));
-    dst.size = src.bytes;
-
-    return false;
-}
-
 } // namespace
 
 namespace InferenceProcess {
@@ -143,6 +90,14 @@ void DataPtr::clean() {
 #if defined(__DCACHE_PRESENT) && (__DCACHE_PRESENT == 1U)
     SCB_CleanDCache_by_Addr(reinterpret_cast<uint32_t *>(data), size);
 #endif
+}
+
+char *DataPtr::begin() const {
+    return static_cast<char *>(data);
+}
+
+char *DataPtr::end() const {
+    return static_cast<char *>(data) + size;
 }
 
 InferenceJob::InferenceJob() : numBytesToPrint(0) {}
@@ -199,10 +154,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     LOG_INFO("Running inference job: %s", job.name.c_str());
 
     // Register debug log callback for profiling
-    RegisterDebugLogCallback(tflu_debug_log);
-
-    tflite::MicroErrorReporter microErrorReporter;
-    tflite::ErrorReporter *reporter = &microErrorReporter;
+    RegisterDebugLogCallback(tfluDebugLog);
 
     // Get model handle and verify that the version is correct
     const tflite::Model *model = ::tflite::GetModel(job.networkModel.data);
@@ -221,15 +173,57 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     tflite::ArmProfiler profiler;
 #endif
 
-    tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, reporter, nullptr, &profiler);
+    tflite::MicroErrorReporter errorReporter;
+    tflite::MicroInterpreter interpreter(
+        model, resolver, tensorArena, tensorArenaSize, &errorReporter, nullptr, &profiler);
 
     // Allocate tensors
-    TfLiteStatus allocate_status = interpreter.AllocateTensors();
-    if (allocate_status != kTfLiteOk) {
+    TfLiteStatus status = interpreter.AllocateTensors();
+    if (status != kTfLiteOk) {
         LOG_ERR("Failed to allocate tensors for inference: job=%s", job.name.c_str());
         return true;
     }
 
+    // Copy IFM data from job descriptor to TFLu arena
+    if (copyIfm(job, interpreter)) {
+        return true;
+    }
+
+    // Run the inference
+    status = interpreter.Invoke();
+    if (status != kTfLiteOk) {
+        LOG_ERR("Invoke failed for inference: job=%s", job.name.c_str());
+        return true;
+    }
+
+#ifdef LAYER_BY_LAYER_PROFILER
+    if (job.pmuCycleCounterEnable) {
+        job.pmuCycleCounterCount = profiler.GetPmuCycleCounterCount();
+    }
+
+    job.pmuEventCount.assign(profiler.GetPmuEventCount().begin(), profiler.GetPmuEventCount().end());
+#endif
+
+    LOG("Inference runtime: %" PRId32 " cycles\n", profiler.GetTotalTicks());
+
+    // Copy output data from TFLu arena to job descriptor
+    if (copyOfm(job, interpreter)) {
+        return true;
+    }
+
+    printJob(job, interpreter);
+
+    // Compare the OFM with the expected reference data
+    if (compareOfm(job, interpreter)) {
+        return true;
+    }
+
+    LOG_INFO("Finished running job: %s", job.name.c_str());
+
+    return false;
+}
+
+bool InferenceProcess::copyIfm(InferenceJob &job, tflite::MicroInterpreter &interpreter) {
     // Create a filtered list of non empty input tensors
     vector<TfLiteTensor *> inputTensors;
     for (size_t i = 0; i < interpreter.inputs_size(); ++i) {
@@ -239,6 +233,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
             inputTensors.push_back(tensor);
         }
     }
+
     if (job.input.size() != inputTensors.size()) {
         LOG_ERR("Number of input buffers does not match number of non empty network tensors: input=%zu, network=%zu",
                 job.input.size(),
@@ -246,10 +241,10 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         return true;
     }
 
-    // Copy input data
+    // Copy input data from job to TFLu arena
     for (size_t i = 0; i < inputTensors.size(); ++i) {
-        const DataPtr &input       = job.input[i];
-        const TfLiteTensor *tensor = inputTensors[i];
+        DataPtr &input       = job.input[i];
+        TfLiteTensor *tensor = inputTensors[i];
 
         if (input.size != tensor->bytes) {
             LOG_ERR("Job input size does not match network input size: job=%s, index=%zu, input=%zu, network=%u",
@@ -260,96 +255,150 @@ bool InferenceProcess::runJob(InferenceJob &job) {
             return true;
         }
 
-        copy(static_cast<char *>(input.data), static_cast<char *>(input.data) + input.size, tensor->data.uint8);
+        copy(input.begin(), input.end(), tensor->data.uint8);
     }
 
-    // Run the inference
-    TfLiteStatus invoke_status = interpreter.Invoke();
-    if (invoke_status != kTfLiteOk) {
-        LOG_ERR("Invoke failed for inference: job=%s", job.name.c_str());
+    return false;
+}
+
+bool InferenceProcess::copyOfm(InferenceJob &job, tflite::MicroInterpreter &interpreter) {
+    // Skip copy if output is empty
+    if (job.output.empty()) {
+        return false;
+    }
+
+    if (interpreter.outputs_size() != job.output.size()) {
+        LOG_ERR("Output size mismatch: job=%zu, network=%u", job.output.size(), interpreter.outputs_size());
         return true;
     }
 
-    LOG("arena_used_bytes : %zu\n", interpreter.arena_used_bytes());
+    for (unsigned i = 0; i < interpreter.outputs_size(); ++i) {
+        DataPtr &output      = job.output[i];
+        TfLiteTensor *tensor = interpreter.output(i);
 
-    LOG("Inference runtime: %u cycles\n", (unsigned int)profiler.GetTotalTicks());
-
-#ifdef LAYER_BY_LAYER_PROFILER
-    if (job.pmuCycleCounterEnable) {
-        job.pmuCycleCounterCount = profiler.GetPmuCycleCounterCount();
-    }
-    job.pmuEventCount.assign(profiler.GetPmuEventCount().begin(), profiler.GetPmuEventCount().end());
-#endif
-
-    // Copy output data
-    if (job.output.size() > 0) {
-        if (interpreter.outputs_size() != job.output.size()) {
-            LOG_ERR("Output size mismatch: job=%zu, network=%u", job.output.size(), interpreter.outputs_size());
+        if (tensor->bytes > output.size) {
+            LOG_ERR("Tensor size mismatch: tensor=%d, expected=%d", tensor->bytes, output.size);
             return true;
         }
 
-        for (unsigned i = 0; i < interpreter.outputs_size(); ++i) {
-            if (copyOutput(*interpreter.output(i), job.output[i])) {
+        copy(tensor->data.uint8, tensor->data.uint8 + tensor->bytes, output.begin());
+    }
+
+    return false;
+}
+
+bool InferenceProcess::compareOfm(InferenceJob &job, tflite::MicroInterpreter &interpreter) {
+    // Skip verification if expected output is empty
+    if (job.expectedOutput.empty()) {
+        return false;
+    }
+
+    if (job.expectedOutput.size() != interpreter.outputs_size()) {
+        LOG_ERR("Expected number of output tensors mismatch: job=%s, expected=%zu, network=%zu",
+                job.name.c_str(),
+                job.expectedOutput.size(),
+                interpreter.outputs_size());
+        return true;
+    }
+
+    for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
+        const DataPtr &expected    = job.expectedOutput[i];
+        const TfLiteTensor *output = interpreter.output(i);
+
+        if (expected.size != output->bytes) {
+            LOG_ERR("Expected output tensor size mismatch: job=%s, index=%u, expected=%zu, network=%zu",
+                    job.name.c_str(),
+                    i,
+                    expected.size,
+                    output->bytes);
+            return true;
+        }
+
+        const char *exp = expected.begin();
+        for (unsigned int j = 0; j < output->bytes; ++j) {
+            if (output->data.uint8[j] != exp[j]) {
+                LOG_ERR("Expected output tensor data mismatch: job=%s, index=%u, offset=%u, "
+                        "expected=%02x, network=%02x\n",
+                        job.name.c_str(),
+                        i,
+                        j,
+                        exp[j],
+                        output->data.uint8[j]);
                 return true;
             }
         }
     }
+
+    return false;
+}
+
+void InferenceProcess::printJob(InferenceJob &job, tflite::MicroInterpreter &interpreter) {
+    for (size_t i = 0; i < job.pmuEventCount.size(); i++) {
+        LOG("ethosu_pmu_cntr%zu : %" PRIu32 "\n", i, job.pmuEventCount[i]);
+    }
+
+    LOG("arena_used_bytes : %zu\n", interpreter.arena_used_bytes());
 
     // Print all of the output data, or the first NUM_BYTES_TO_PRINT bytes,
     // whichever comes first as well as the output shape.
     LOG("num_of_outputs: %d\n", interpreter.outputs_size());
     LOG("output_begin\n");
     LOG("[\n");
+
     for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
-        TfLiteTensor *output = interpreter.output(i);
-        print_output_data(output, job.numBytesToPrint);
+        printOutputTensor(interpreter.output(i), job.numBytesToPrint);
+
         if (i != interpreter.outputs_size() - 1) {
             LOG(",\n");
         }
     }
+
     LOG("]\n");
     LOG("output_end\n");
+}
 
-    if (job.expectedOutput.size() > 0) {
-        if (job.expectedOutput.size() != interpreter.outputs_size()) {
-            LOG_ERR("Expected number of output tensors mismatch: job=%s, expected=%zu, network=%zu",
-                    job.name.c_str(),
-                    job.expectedOutput.size(),
-                    interpreter.outputs_size());
-            return true;
-        }
+void InferenceProcess::printOutputTensor(TfLiteTensor *output, size_t bytesToPrint) {
+    constexpr auto crc        = Crc();
+    const uint32_t crc32      = crc.crc32(output->data.data, output->bytes);
+    const int numBytesToPrint = min(output->bytes, bytesToPrint);
+    int dims_size             = output->dims->size;
 
-        for (unsigned int i = 0; i < interpreter.outputs_size(); i++) {
-            const DataPtr &expected    = job.expectedOutput[i];
-            const TfLiteTensor *output = interpreter.output(i);
+    LOG("{\n");
+    LOG("\"dims\": [%d,", dims_size);
 
-            if (expected.size != output->bytes) {
-                LOG_ERR("Expected output tensor size mismatch: job=%s, index=%u, expected=%zu, network=%zu",
-                        job.name.c_str(),
-                        i,
-                        expected.size,
-                        output->bytes);
-                return true;
-            }
-
-            for (unsigned int j = 0; j < output->bytes; ++j) {
-                if (output->data.uint8[j] != static_cast<uint8_t *>(expected.data)[j]) {
-                    LOG_ERR("Expected output tensor data mismatch: job=%s, index=%u, offset=%u, "
-                            "expected=%02x, network=%02x\n",
-                            job.name.c_str(),
-                            i,
-                            j,
-                            static_cast<uint8_t *>(expected.data)[j],
-                            output->data.uint8[j]);
-                    return true;
-                }
-            }
-        }
+    for (int i = 0; i < output->dims->size - 1; ++i) {
+        LOG("%d,", output->dims->data[i]);
     }
 
-    LOG_INFO("Finished running job: %s", job.name.c_str());
+    LOG("%d],\n", output->dims->data[dims_size - 1]);
+    LOG("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
 
-    return false;
+    if (numBytesToPrint) {
+        LOG("\"crc32\": \"%08" PRIx32 "\",\n", crc32);
+        LOG("\"data\":\"");
+
+        for (int i = 0; i < numBytesToPrint - 1; ++i) {
+            /*
+             * Workaround an issue when compiling with GCC where by
+             * printing only a '\n' the produced global output is wrong.
+             */
+            if (i % 15 == 0 && i != 0) {
+                LOG("0x%02x,\n", output->data.uint8[i]);
+            } else {
+                LOG("0x%02x,", output->data.uint8[i]);
+            }
+        }
+
+        LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
+    } else {
+        LOG("\"crc32\": \"%08" PRIx32 "\"\n", crc32);
+    }
+
+    LOG("}");
+}
+
+void InferenceProcess::tfluDebugLog(const char *s) {
+    LOG("%s", s);
 }
 
 } // namespace InferenceProcess

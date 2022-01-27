@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+ * Copyright (c) 2019-2022 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -53,10 +53,7 @@ struct InferenceJob {
     std::vector<DataPtr> output;
     std::vector<DataPtr> expectedOutput;
     size_t numBytesToPrint;
-    std::vector<uint8_t> pmuEventConfig;
-    bool pmuCycleCounterEnable;
-    std::vector<uint32_t> pmuEventCount;
-    uint64_t pmuCycleCounterCount;
+    void *externalContext;
 
     InferenceJob();
     InferenceJob(const std::string &name,
@@ -64,9 +61,8 @@ struct InferenceJob {
                  const std::vector<DataPtr> &input,
                  const std::vector<DataPtr> &output,
                  const std::vector<DataPtr> &expectedOutput,
-                 size_t numBytesToPrint,
-                 const std::vector<uint8_t> &pmuEventConfig,
-                 const bool pmuCycleCounterEnable);
+                 const size_t numBytesToPrint = 0,
+                 void *externalContext        = nullptr);
 
     void invalidate();
     void clean();

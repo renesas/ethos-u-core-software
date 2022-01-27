@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+ * Copyright (c) 2019-2022 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -100,20 +100,18 @@ char *DataPtr::end() const {
     return static_cast<char *>(data) + size;
 }
 
-InferenceJob::InferenceJob() : numBytesToPrint(0) {}
+InferenceJob::InferenceJob() : numBytesToPrint(0), externalContext(nullptr) {}
 
 InferenceJob::InferenceJob(const string &_name,
                            const DataPtr &_networkModel,
                            const vector<DataPtr> &_input,
                            const vector<DataPtr> &_output,
                            const vector<DataPtr> &_expectedOutput,
-                           size_t _numBytesToPrint,
-                           const vector<uint8_t> &_pmuEventConfig,
-                           const bool _pmuCycleCounterEnable) :
+                           const size_t _numBytesToPrint,
+                           void *_externalContext) :
     name(_name),
     networkModel(_networkModel), input(_input), output(_output), expectedOutput(_expectedOutput),
-    numBytesToPrint(_numBytesToPrint), pmuEventConfig(_pmuEventConfig), pmuCycleCounterEnable(_pmuCycleCounterEnable),
-    pmuEventCount(), pmuCycleCounterCount(0) {}
+    numBytesToPrint(_numBytesToPrint), externalContext(_externalContext) {}
 
 void InferenceJob::invalidate() {
     networkModel.invalidate();
@@ -167,15 +165,13 @@ bool InferenceProcess::runJob(InferenceJob &job) {
 
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
-#ifdef LAYER_BY_LAYER_PROFILER
-    tflite::LayerByLayerProfiler profiler(job.pmuEventConfig, job.pmuCycleCounterEnable);
-#else
     tflite::ArmProfiler profiler;
-#endif
-
     tflite::MicroErrorReporter errorReporter;
     tflite::MicroInterpreter interpreter(
         model, resolver, tensorArena, tensorArenaSize, &errorReporter, nullptr, &profiler);
+
+    // Set external context
+    interpreter.SetMicroExternalContext(job.externalContext);
 
     // Allocate tensors
     TfLiteStatus status = interpreter.AllocateTensors();
@@ -195,14 +191,6 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         LOG_ERR("Invoke failed for inference: job=%s", job.name.c_str());
         return true;
     }
-
-#ifdef LAYER_BY_LAYER_PROFILER
-    if (job.pmuCycleCounterEnable) {
-        job.pmuCycleCounterCount = profiler.GetPmuCycleCounterCount();
-    }
-
-    job.pmuEventCount.assign(profiler.GetPmuEventCount().begin(), profiler.GetPmuEventCount().end());
-#endif
 
     LOG("Inference runtime: %" PRId32 " cycles\n", profiler.GetTotalTicks());
 
@@ -333,10 +321,6 @@ bool InferenceProcess::compareOfm(InferenceJob &job, tflite::MicroInterpreter &i
 }
 
 void InferenceProcess::printJob(InferenceJob &job, tflite::MicroInterpreter &interpreter) {
-    for (size_t i = 0; i < job.pmuEventCount.size(); i++) {
-        LOG("ethosu_pmu_cntr%zu : %" PRIu32 "\n", i, job.pmuEventCount[i]);
-    }
-
     LOG("arena_used_bytes : %zu\n", interpreter.arena_used_bytes());
 
     // Print all of the output data, or the first NUM_BYTES_TO_PRINT bytes,

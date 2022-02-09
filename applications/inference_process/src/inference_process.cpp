@@ -27,6 +27,9 @@
 #ifdef LAYER_BY_LAYER_PROFILER
 #include "layer_by_layer_profiler.hpp"
 #endif
+
+#include "crc.hpp"
+
 #include "ethosu_log.h"
 
 #include "inference_process.hpp"
@@ -36,46 +39,6 @@
 #include <inttypes.h>
 
 using namespace std;
-
-namespace {
-
-class Crc {
-public:
-    constexpr Crc() : table() {
-        uint32_t poly = 0xedb88320;
-
-        for (uint32_t i = 0; i < 256; i++) {
-            uint32_t crc = i;
-
-            for (int j = 0; j < 8; j++) {
-                if (crc & 1) {
-                    crc = poly ^ (crc >> 1);
-                } else {
-                    crc >>= 1;
-                }
-            }
-
-            table[i] = crc;
-        }
-    }
-
-    uint32_t crc32(const void *data, const size_t length, uint32_t init = 0) const {
-        uint32_t crc = init ^ 0xffffffff;
-
-        const uint8_t *v = static_cast<const uint8_t *>(data);
-
-        for (size_t i = 0; i < length; i++) {
-            crc = table[(crc ^ v[i]) & 0xff] ^ (crc >> 8);
-        }
-
-        return crc ^ 0xffffffff;
-    }
-
-private:
-    uint32_t table[256];
-};
-
-} // namespace
 
 namespace InferenceProcess {
 DataPtr::DataPtr(void *_data, size_t _size) : data(_data), size(_size) {}

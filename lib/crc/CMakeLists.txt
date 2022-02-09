@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021-2022 Arm Limited. All rights reserved.
+# Copyright (c) 2022 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,17 +16,5 @@
 # limitations under the License.
 #
 
-# Build layer_by_layer_profiler
-add_subdirectory(layer_by_layer_profiler)
-
-# Build arm_profiler
-add_subdirectory(arm_profiler)
-
-# Build ethosu_monitor
-add_subdirectory(ethosu_monitor)
-
-# Build ethosu_logging
-add_subdirectory(ethosu_log)
-
-# Build crc lib
-add_subdirectory(crc)
+add_library(ethosu_crc INTERFACE)
+target_include_directories(ethosu_crc INTERFACE include)

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2022 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,7 +23,7 @@ add_library(inference_process STATIC)
 target_include_directories(inference_process PUBLIC include
                            PRIVATE ${TENSORFLOW_PATH} ${TENSORFLOW_PATH}/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include)
 
-target_link_libraries(inference_process PRIVATE tflu cmsis_core cmsis_device)
+target_link_libraries(inference_process PRIVATE tflu cmsis_core cmsis_device ethosu_crc)
 if (TARGET layer_by_layer_profiler)
     target_link_libraries(inference_process PRIVATE layer_by_layer_profiler)
 endif()

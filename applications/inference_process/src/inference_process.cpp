@@ -171,7 +171,9 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         model, resolver, tensorArena, tensorArenaSize, &errorReporter, nullptr, &profiler);
 
     // Set external context
-    interpreter.SetMicroExternalContext(job.externalContext);
+    if (job.externalContext != nullptr) {
+        interpreter.SetMicroExternalContext(job.externalContext);
+    }
 
     // Allocate tensors
     TfLiteStatus status = interpreter.AllocateTensors();

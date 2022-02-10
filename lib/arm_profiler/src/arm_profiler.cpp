@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Arm Limited. All rights reserved.
+ * Copyright (c) 2021-2022 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -54,8 +54,8 @@ void ArmProfiler::EndEvent(uint32_t event_handle) {
         "%s : cycle_cnt : %u cycles", tags_[event_handle], end_ticks_[event_handle] - start_ticks_[event_handle]);
 }
 
-int32_t ArmProfiler::GetTotalTicks() const {
-    int32_t ticks = 0;
+uint64_t ArmProfiler::GetTotalTicks() const {
+    uint64_t ticks = 0;
 
     for (size_t i = 0; i < num_events_; ++i) {
         ticks += end_ticks_[i] - start_ticks_[i];

@@ -157,7 +157,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         return true;
     }
 
-    LOG("Inference runtime: %" PRId32 " cycles\n", profiler.GetTotalTicks());
+    LOG("Inference runtime: %" PRIu64 " cycles\n", profiler.GetTotalTicks());
 
     // Copy output data from TFLu arena to job descriptor
     if (copyOfm(job, interpreter)) {

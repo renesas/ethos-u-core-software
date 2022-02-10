@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Arm Limited. All rights reserved.
+ * Copyright (c) 2021-2022 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -30,7 +30,7 @@ public:
     ArmProfiler(size_t max_events = 200);
     uint32_t BeginEvent(const char *tag);
     void EndEvent(uint32_t event_handle);
-    int32_t GetTotalTicks() const;
+    uint64_t GetTotalTicks() const;
 
 private:
     size_t max_events_;

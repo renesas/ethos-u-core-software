@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2022 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -32,9 +32,13 @@ if(CORE_SOFTWARE_RTOS_LOWER STREQUAL "threadx" OR CORE_SOFTWARE_RTOS_LOWER STREQ
     if(THREADX_TOOLCHAIN STREQUAL "armclang")
         set(THREADX_TOOLCHAIN "ac6")
     endif()
+
     #if ThreadX supports this configuration, build ThreadX.
     if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/threadx/ports/${THREADX_ARCH}/${THREADX_TOOLCHAIN}/CMakeLists.txt)
         add_subdirectory(threadx)
+        if(THREADX_ARCH STREQUAL "cortex_m33" OR THREADX_ARCH STREQUAL "cortex_m55")
+            target_compile_definitions(threadx PUBLIC TX_SINGLE_MODE_SECURE)
+        endif()
     else()
         message(STATUS "Skipping ThreadX build - doesn't support toolchain=${THREADX_TOOLCHAIN} and cpu=${THREADX_ARCH}")
     endif()

@@ -321,6 +321,7 @@ void InferenceProcess::printOutputTensor(TfLiteTensor *output, size_t bytesToPri
 
     LOG("%d],\n", output->dims->data[dims_size - 1]);
     LOG("\"data_address\": \"%08" PRIx32 "\",\n", (uint32_t)output->data.data);
+    LOG("\"data_bytes\": %d,\n", output->bytes);
 
     if (numBytesToPrint) {
         LOG("\"crc32\": \"%08" PRIx32 "\",\n", crc32);

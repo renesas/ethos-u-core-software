@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 Arm Limited. All rights reserved.
+# Copyright (c) 2021-2022 Arm Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -171,7 +171,7 @@ tensorflow_target_sources_glob(tflu GLOB TRUE
     ${TFLU_PATH}/kernels/*.cc)
 
 tensorflow_target_sources_glob(tflu GLOB_RECURSE FALSE
-    ${TFLU_PATH}/../c/*.c
+    ${TFLU_PATH}/../c/*.cc
     ${TFLU_PATH}/../core/*.cc
     ${TFLU_PATH}/../kernels/*.cc
     ${TFLU_PATH}/../schema/*.cc)

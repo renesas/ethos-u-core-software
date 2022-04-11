@@ -161,6 +161,15 @@ tensorflow_target_sources_glob(tflu GLOB TRUE
 target_include_directories(tflu PRIVATE
     ${TFLU_PATH}/cortex_m_generic)
 
+# For DWT/PMU counters
+target_link_libraries(tflu PRIVATE cmsis_device)
+target_compile_definitions(tflu PRIVATE ${ARM_CPU})
+
+if("${ARM_CPU}" STREQUAL "ARMCM55")
+    target_compile_definitions(tflu PRIVATE
+        ARM_MODEL_USE_PMU_COUNTERS)
+endif()
+
 #############################################################################
 # Tensorflow micro lite
 #############################################################################

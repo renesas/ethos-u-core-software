@@ -167,6 +167,7 @@ target_include_directories(tflu PRIVATE
 
 tensorflow_target_sources_glob(tflu GLOB TRUE
     ${TFLU_PATH}/*.cc
+    ${TFLU_PATH}/arena_allocator/*.cc
     ${TFLU_PATH}/memory_planner/*.cc
     ${TFLU_PATH}/kernels/*.cc)
 

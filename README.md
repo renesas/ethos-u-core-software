@@ -6,10 +6,8 @@ The Arm(R) Ethos(TM)-U core software is built with CMake. It is recommended to
 build out of tree like illustrated below.
 
 ```
-$ mkdir build
-$ cd build
-$ cmake .. -DCMAKE_TOOLCHAIN_FILE=<toolchain> -DCMAKE_SYSTEM_PROCESSOR=cortex-m<nr><features>
-$ make
+$ cmake -B build -DCMAKE_TOOLCHAIN_FILE=<core_platform_path>/cmake/toolchain/<toolchain_file> -DTARGET_CPU=cortex-m<nr><features>
+$ cmake --build build -j8
 ```
 
 Available build options can be listed with `cmake -LH ..`.

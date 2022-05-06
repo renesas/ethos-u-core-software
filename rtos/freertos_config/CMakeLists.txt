@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2020 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2022 Arm Limited. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -26,6 +26,8 @@ elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m55")
     add_compile_definitions(CPU_CORTEX_M55)
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m7")
     add_compile_definitions(CPU_CORTEX_M7)
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m85")
+    add_compile_definitions(CPU_CORTEX_M85)
 else()
     message(FATAL_ERROR "Unsupported compiler ${CMAKE_SYSTEM_PROCESSOR}.")
 endif()
@@ -95,6 +97,15 @@ elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m33")
     )
 elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m55")
 # TODO: using the same port files as Cortex-M33. Update for Cortex-M55.
+    target_sources(freertos_kernel PRIVATE
+        ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c
+        ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c
+    )
+    target_include_directories(freertos_kernel PUBLIC
+        ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure
+    )
+elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m85")
+# TODO: using the same port files as Cortex-M33. Update for Cortex-M85.
     target_sources(freertos_kernel PRIVATE
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c

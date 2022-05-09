@@ -38,9 +38,14 @@ if((CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m55") AND
     #if ThreadX supports this configuration, build ThreadX.
     if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/threadx/ports/${THREADX_ARCH}/${THREADX_TOOLCHAIN}/CMakeLists.txt)
         add_subdirectory(threadx)
+
         if(THREADX_ARCH STREQUAL "cortex_m33" OR THREADX_ARCH STREQUAL "cortex_m55")
             target_compile_definitions(threadx PUBLIC TX_SINGLE_MODE_SECURE)
         endif()
+
+        target_compile_options(threadx PRIVATE
+            -Wno-unused-function
+            -Wno-unused-parameter)
     else()
         message(STATUS "Skipping ThreadX build - doesn't support toolchain=${THREADX_TOOLCHAIN} and cpu=${THREADX_ARCH}")
     endif()

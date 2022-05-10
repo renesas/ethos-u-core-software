@@ -52,6 +52,7 @@ struct InferenceJob {
     std::vector<DataPtr> input;
     std::vector<DataPtr> output;
     std::vector<DataPtr> expectedOutput;
+    uint64_t cpuCycles{0};
     size_t numBytesToPrint;
     void *externalContext;
 

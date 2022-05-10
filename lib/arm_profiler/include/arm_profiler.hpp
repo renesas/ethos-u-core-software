@@ -31,6 +31,7 @@ public:
     uint32_t BeginEvent(const char *tag);
     void EndEvent(uint32_t event_handle);
     uint64_t GetTotalTicks() const;
+    void ReportResults() const;
 
 private:
     size_t max_events_;

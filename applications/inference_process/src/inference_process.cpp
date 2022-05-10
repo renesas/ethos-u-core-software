@@ -21,6 +21,7 @@
 #include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_profiler.h"
+#include "tensorflow/lite/micro/micro_time.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #include "arm_profiler.hpp"
@@ -150,14 +151,19 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         return true;
     }
 
+    // Get the current cycle counter value
+    uint32_t cpuCyclesBegin = tflite::GetCurrentTimeTicks();
+
     // Run the inference
     status = interpreter.Invoke();
+
+    // Calculate nbr of CPU cycles for the Invoke call
+    job.cpuCycles = tflite::GetCurrentTimeTicks() - cpuCyclesBegin;
+
     if (status != kTfLiteOk) {
         LOG_ERR("Invoke failed for inference: job=%s", job.name.c_str());
         return true;
     }
-
-    LOG("Inference runtime: %" PRIu64 " cycles\n", profiler.GetTotalTicks());
 
     // Copy output data from TFLu arena to job descriptor
     if (copyOfm(job, interpreter)) {
@@ -171,7 +177,15 @@ bool InferenceProcess::runJob(InferenceJob &job) {
         return true;
     }
 
+    LOG_INFO("\n");
     LOG_INFO("Finished running job: %s", job.name.c_str());
+
+    profiler.ReportResults();
+
+    LOG("\n");
+    LOG("Operator(s) total: %" PRIu64 " CPU cycles\n\n", profiler.GetTotalTicks());
+
+    LOG("Inference runtime: %" PRIu64 " CPU cycles total\n\n", job.cpuCycles);
 
     return false;
 }

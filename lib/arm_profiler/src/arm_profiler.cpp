@@ -50,8 +50,6 @@ uint32_t ArmProfiler::BeginEvent(const char *tag) {
 void ArmProfiler::EndEvent(uint32_t event_handle) {
     TFLITE_DCHECK(event_handle < max_events_);
     end_ticks_[event_handle] = GetCurrentTimeTicks();
-    tflite::GetMicroErrorReporter()->Report(
-        "%s : cycle_cnt : %u cycles", tags_[event_handle], end_ticks_[event_handle] - start_ticks_[event_handle]);
 }
 
 uint64_t ArmProfiler::GetTotalTicks() const {
@@ -62,6 +60,14 @@ uint64_t ArmProfiler::GetTotalTicks() const {
     }
 
     return ticks;
+}
+
+void ArmProfiler::ReportResults() const {
+    tflite::GetMicroErrorReporter()->Report("Profiler report, CPU cycles per operator:");
+    for (size_t i = 0; i < num_events_; ++i) {
+        tflite::GetMicroErrorReporter()->Report(
+            "%s : cycle_cnt : %u cycles", tags_[i], end_ticks_[i] - start_ticks_[i]);
+    }
 }
 
 } // namespace tflite

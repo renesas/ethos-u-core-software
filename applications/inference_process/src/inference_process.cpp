@@ -119,11 +119,9 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     RegisterDebugLogCallback(tfluDebugLog);
 
     // Get model handle and verify that the version is correct
-    const tflite::Model *model = ::tflite::GetModel(job.networkModel.data);
-    if (model->version() != TFLITE_SCHEMA_VERSION) {
-        LOG_ERR("Model schema version unsupported: version=%" PRIu32 ", supported=%d.",
-                model->version(),
-                TFLITE_SCHEMA_VERSION);
+    const tflite::Model *model = parser.getModel(job.networkModel.data, job.networkModel.size);
+    if (model == nullptr) {
+        LOG_ERR("Invalid model");
         return true;
     }
 

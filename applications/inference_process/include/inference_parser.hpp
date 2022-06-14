@@ -56,15 +56,30 @@ Array<T, U> makeArray(T *const data, U &size, size_t capacity) {
 
 class InferenceParser {
 public:
-    template <typename T, typename U, size_t S>
-    bool parseModel(const void *buffer, char (&description)[S], T &&ifmDims, U &&ofmDims) {
+    const tflite::Model *getModel(const void *buffer, size_t size) {
+        // Verify buffer
+        flatbuffers::Verifier base_verifier(reinterpret_cast<const uint8_t *>(buffer), size);
+        if (!tflite::VerifyModelBuffer(base_verifier)) {
+            printf("Warning: the model is not valid\n");
+            return nullptr;
+        }
+
         // Create model handle
         const tflite::Model *model = tflite::GetModel(buffer);
         if (model->subgraphs() == nullptr) {
             printf("Warning: nullptr subgraph\n");
-            return true;
+            return nullptr;
         }
 
+        return model;
+    }
+
+    template <typename T, typename U, size_t S>
+    bool parseModel(const void *buffer, size_t size, char (&description)[S], T &&ifmDims, U &&ofmDims) {
+        const tflite::Model *model = getModel(buffer, size);
+        if (model == nullptr) {
+            return true;
+        }
         strncpy(description, model->description()->c_str(), sizeof(description));
 
         // Get input dimensions for first subgraph

@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "inference_parser.hpp"
+
 #include <array>
 #include <queue>
 #include <stdlib.h>
@@ -85,5 +87,6 @@ private:
 
     uint8_t *tensorArena;
     const size_t tensorArenaSize;
+    InferenceParser parser;
 };
 } // namespace InferenceProcess

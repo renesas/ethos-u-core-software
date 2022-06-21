@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+# Copyright (c) 2019-2022 Arm Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -17,20 +17,19 @@
 #
 
 # Extract the CPU number from the system processor
-string(REGEX MATCH "^cortex-m([0-9]+)$" CPU_NUMBER ${CMAKE_SYSTEM_PROCESSOR})
+string(REGEX REPLACE "^cortex-m([0-9]+[a-z]*)" "\\1" CPU_NUMBER ${CMAKE_SYSTEM_PROCESSOR})
 if(NOT CPU_NUMBER)
     message(FATAL_ERROR "System processor '${CMAKE_SYSTEM_PROCESSOR}' not supported. Should be cortex-m<nr>.")
 endif()
-string(REGEX REPLACE "^cortex-m([0-9]+)$" "\\1" CPU_NUMBER ${CMAKE_SYSTEM_PROCESSOR})
 
-set(ARM_CPU "ARMCM${CPU_NUMBER}")
+string(TOUPPER "ARMCM${CPU_NUMBER}" ARM_CPU)
 
 # Set CPU specific features
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m33")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m33")
     set(ARM_FEATURES "_DSP_FP")
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m4")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES  "cortex-m4")
     set(ARM_FEATURES "_FP")
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m7")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES  "cortex-m7")
     set(ARM_FEATURES "_DP")
 else()
     set(ARM_FEATURES "")

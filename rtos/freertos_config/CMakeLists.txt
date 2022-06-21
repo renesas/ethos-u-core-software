@@ -16,23 +16,23 @@
 # limitations under the License.
 #
 
-if(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m3")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m3")
     add_compile_definitions(CPU_CORTEX_M3)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m33")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m33")
     add_compile_definitions(CPU_CORTEX_M33)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m4")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m4")
     add_compile_definitions(CPU_CORTEX_M4)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m55")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m55")
     add_compile_definitions(CPU_CORTEX_M55)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m7")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m7")
     add_compile_definitions(CPU_CORTEX_M7)
-elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "cortex-m85")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m85")
     add_compile_definitions(CPU_CORTEX_M85)
 else()
     message(FATAL_ERROR "Unsupported compiler ${CMAKE_SYSTEM_PROCESSOR}.")
 endif()
 
-if((${TARGET} STREQUAL "mps2") OR (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m55"))
+if((${TARGET} STREQUAL "mps2") OR (${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m55"))
     set("SYSTEM_CORE_CLOCK" "25000000")
 else()
     set("SYSTEM_CORE_CLOCK" "32000000")
@@ -66,28 +66,28 @@ target_sources(freertos_kernel PRIVATE
 target_sources(freertos_kernel PRIVATE
     ${FREERTOS_KERNEL_PATH}/portable/MemMang/heap_3.c)
 
-if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m3")
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m3")
 target_sources(freertos_kernel PRIVATE
     ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM3/port.c
 )
 target_include_directories(freertos_kernel PUBLIC
     ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM3
 )
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m4")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m4")
     target_sources(freertos_kernel PRIVATE
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM4F/port.c
     )
     target_include_directories(freertos_kernel PUBLIC
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM4F
     )
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m7")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m7")
     target_sources(freertos_kernel PRIVATE
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM7/r0p1/port.c
     )
     target_include_directories(freertos_kernel PUBLIC
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM7/r0p1
     )
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m33")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m33")
     target_sources(freertos_kernel PRIVATE
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/portasm.c
@@ -95,7 +95,7 @@ elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m33")
     target_include_directories(freertos_kernel PUBLIC
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure
     )
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m55")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m55")
 # TODO: using the same port files as Cortex-M33. Update for Cortex-M55.
     target_sources(freertos_kernel PRIVATE
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c
@@ -104,7 +104,7 @@ elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m55")
     target_include_directories(freertos_kernel PUBLIC
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure
     )
-elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "cortex-m85")
+elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "cortex-m85")
 # TODO: using the same port files as Cortex-M33. Update for Cortex-M85.
     target_sources(freertos_kernel PRIVATE
         ${FREERTOS_KERNEL_PATH}/portable/GCC/ARM_CM33_NTZ/non_secure/port.c

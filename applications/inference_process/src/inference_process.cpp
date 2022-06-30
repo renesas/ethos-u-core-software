@@ -41,6 +41,33 @@
 
 using namespace std;
 
+namespace {
+const char *BASE64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+void printBase64(const uint8_t *data, size_t len) {
+    size_t count     = len / 3;
+    size_t remainder = len % 3;
+    char buf[]       = "====";
+    while (count--) {
+        buf[0] = BASE64[data[0] >> 2];
+        buf[1] = BASE64[(data[0] & 3) << 4 | data[1] >> 4];
+        buf[2] = BASE64[(data[1] & 0xf) << 2 | data[2] >> 6];
+        buf[3] = BASE64[data[2] & 0x3f];
+        LOG("%s", buf);
+        data += 3;
+    }
+    if (remainder) {
+        uint8_t b2 = remainder > 1 ? data[1] : 0;
+        buf[0]     = BASE64[data[0] >> 2];
+        buf[1]     = BASE64[(data[0] & 3) << 4 | b2 >> 4];
+        buf[2]     = remainder > 1 ? BASE64[(b2 & 0xf) << 2] : '=';
+        buf[3]     = '=';
+        LOG("%s", buf);
+    }
+}
+
+} // namespace
+
 namespace InferenceProcess {
 DataPtr::DataPtr(void *_data, size_t _size) : data(_data), size(_size) {}
 
@@ -338,20 +365,8 @@ void InferenceProcess::printOutputTensor(TfLiteTensor *output, size_t bytesToPri
     if (numBytesToPrint) {
         LOG("\"crc32\": \"%08" PRIx32 "\",\n", crc32);
         LOG("\"data\":\"");
-
-        for (int i = 0; i < numBytesToPrint - 1; ++i) {
-            /*
-             * Workaround an issue when compiling with GCC where by
-             * printing only a '\n' the produced global output is wrong.
-             */
-            if (i % 15 == 0 && i != 0) {
-                LOG("0x%02x,\n", output->data.uint8[i]);
-            } else {
-                LOG("0x%02x,", output->data.uint8[i]);
-            }
-        }
-
-        LOG("0x%02x\"\n", output->data.uint8[numBytesToPrint - 1]);
+        printBase64(output->data.uint8, numBytesToPrint);
+        LOG("\"\n");
     } else {
         LOG("\"crc32\": \"%08" PRIx32 "\"\n", crc32);
     }

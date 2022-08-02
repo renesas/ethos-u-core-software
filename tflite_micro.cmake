@@ -165,7 +165,7 @@ target_include_directories(tflu PRIVATE
 target_link_libraries(tflu PRIVATE cmsis_device)
 target_compile_definitions(tflu PRIVATE ${ARM_CPU})
 
-if("${ARM_CPU}" STREQUAL "ARMCM55")
+if(("${ARM_CPU}" STREQUAL "ARMCM55") OR ("${ARM_CPU}" STREQUAL "ARMCM85"))
     target_compile_definitions(tflu PRIVATE
         ARM_MODEL_USE_PMU_COUNTERS)
 endif()

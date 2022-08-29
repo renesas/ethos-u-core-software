@@ -89,8 +89,8 @@ endfunction()
 # Flatbuffers
 # Synch revision with 'tensorflow/lite/micro/tools/make/flatbuffers_download.sh'
 download_third_party(tensorflow-flatbuffers
-    URL "https://github.com/google/flatbuffers/archive/dca12522a9f9e37f126ab925fd385c807ab4f84e.zip"
-    URL_MD5 aa9adc93eb9b33fa1a2a90969e48baee)
+    URL "https://github.com/google/flatbuffers/archive/a66de58af9565586832c276fbb4251fc416bf07f.zip"
+    URL_MD5 51a7a96747e1c33eb4aac6d52513a02f)
 
 target_include_directories(tflu PUBLIC
     ${tensorflow-flatbuffers_SOURCE_DIR}/include)

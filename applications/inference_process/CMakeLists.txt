@@ -20,16 +20,18 @@ set(TR_PRINT_OUTPUT_BYTES "" CACHE STRING "Print output data.")
 
 add_library(inference_process STATIC)
 
-target_include_directories(inference_process PUBLIC include
-                           PRIVATE ${TENSORFLOW_PATH} ${TENSORFLOW_PATH}/tensorflow/lite/micro/tools/make/downloads/flatbuffers/include)
+target_include_directories(inference_process PUBLIC include)
 
 target_link_libraries(inference_process PRIVATE tflu cmsis_core cmsis_device ethosu_crc)
+
 if (TARGET layer_by_layer_profiler)
     target_link_libraries(inference_process PRIVATE layer_by_layer_profiler)
 endif()
+
 if (TARGET arm_profiler)
     target_link_libraries(inference_process PRIVATE arm_profiler)
 endif()
+
 if (TARGET ethosu_log)
     target_link_libraries(inference_process PRIVATE ethosu_log)
 endif()

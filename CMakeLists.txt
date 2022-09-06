@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: Copyright 2019-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: Copyright 2019-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -78,6 +78,9 @@ include(event_recorder.cmake)
 
 # Build libs
 add_subdirectory(lib)
+
+# OpenAMP
+add_subdirectory(openamp)
 
 # Build applications
 add_subdirectory(applications)

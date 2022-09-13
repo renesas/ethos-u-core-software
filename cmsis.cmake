@@ -17,7 +17,7 @@
 #
 
 # Extract the CPU number from the system processor
-string(REGEX REPLACE "^cortex-m([0-9]+[a-z]*)" "\\1" CPU_NUMBER ${CMAKE_SYSTEM_PROCESSOR})
+string(REGEX REPLACE "^cortex-m([0-9]+[a-z]*).*" "\\1" CPU_NUMBER ${CMAKE_SYSTEM_PROCESSOR})
 if(NOT CPU_NUMBER)
     message(FATAL_ERROR "System processor '${CMAKE_SYSTEM_PROCESSOR}' not supported. Should be cortex-m<nr>.")
 endif()

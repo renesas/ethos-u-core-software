@@ -24,7 +24,7 @@ endif()
 
 # Include ThreadX
 # Only enable cortex-m55 until cortex-m33 is sorted out upstream
-if((CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m55") AND
+if((CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m55(\\+|$)") AND
     (CORE_SOFTWARE_RTOS_LOWER STREQUAL "threadx" OR CORE_SOFTWARE_RTOS_LOWER STREQUAL "all"))
     #threadx build requires 2 defines: THREADX_ARCH (format: cortex_m4) and THREADX_TOOLCHAIN (ac5/ac6/gnu).
     #set them according to existing defines CMAKE_SYSTEM_PROCESSOR and CMAKE_CXX_COMPILER_ID:

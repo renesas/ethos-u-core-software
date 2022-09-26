@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -21,13 +21,14 @@
 
 #include "EventRecorder.h"
 #include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow/lite/micro/micro_profiler_interface.h"
 #include <memory>
 #include <vector>
 
 // NOTE: This profiler only works on systems with 1 NPU due to the use of
 // ethosu_reserve_driver().
 namespace tflite {
-class LayerByLayerProfiler : public MicroProfiler {
+class LayerByLayerProfiler : public MicroProfilerInterface {
 public:
     enum Backend { PRINTF, EVENT_RECORDER };
 

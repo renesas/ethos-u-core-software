@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -19,13 +19,12 @@
 #ifndef ARM_PROFILER_H
 #define ARM_PROFILER_H
 
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/micro/micro_profiler.h"
+#include "tensorflow/lite/micro/micro_profiler_interface.h"
 #include <memory>
 
 // TODO: Merge this profiler with EthosUprofiler.
 namespace tflite {
-class ArmProfiler : public MicroProfiler {
+class ArmProfiler : public MicroProfilerInterface {
 public:
     ArmProfiler(size_t max_events = 200);
     uint32_t BeginEvent(const char *tag);

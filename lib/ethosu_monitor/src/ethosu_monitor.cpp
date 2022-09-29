@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -21,21 +21,26 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-EthosUMonitor::EthosUMonitor(std::vector<int32_t> __eventRecordIds, Backend __backend) :
-    eventRecordIds(__eventRecordIds), backend(__backend) {}
+EthosUMonitor::EthosUMonitor(Backend __backend) : backend(__backend) {}
 
 void EthosUMonitor::monitorSample(ethosu_driver *drv) {
-    // Fetch events
-    uint32_t eventCount[ETHOSU_PMU_NCOUNTERS] = {0};
-    for (size_t i = 0; i < numEvents; i++) {
-        eventCount[i] = ETHOSU_PMU_Get_EVCNTR(drv, i);
-        switch (backend) {
-        case EVENT_RECORDER:
-            EventRecord2(eventRecordIds[i], ethosuEventIds[i], eventCount[i]);
-            break;
-        case PRINTF:
-        default:
-            LOG("ethosu_pmu_cntr%zd : %" PRIu32 "\n", i, eventCount[i]);
+    switch (backend) {
+    case EVENT_RECORDER: {
+        EthosuEventRecord record = {ETHOSU_PMU_Get_CCNTR(drv),
+                                    ETHOSU_PMU_Get_QREAD(drv),
+                                    ETHOSU_PMU_Get_STATUS(drv),
+                                    {{ethosuEventIds[0], ETHOSU_PMU_Get_EVCNTR(drv, 0)},
+                                     {ethosuEventIds[1], ETHOSU_PMU_Get_EVCNTR(drv, 1)},
+                                     {ethosuEventIds[2], ETHOSU_PMU_Get_EVCNTR(drv, 2)},
+                                     {ethosuEventIds[3], ETHOSU_PMU_Get_EVCNTR(drv, 3)}}};
+
+        EventRecordData(EventID(EventLevelDetail, EthosuEventComponentNo, 0), &record, sizeof(record));
+        break;
+    }
+    case PRINTF:
+    default:
+        for (size_t i = 0; i < numEvents; i++) {
+            LOG("ethosu_pmu_cntr%zd : %" PRIu32 "\n", i, ETHOSU_PMU_Get_EVCNTR(drv, 0));
         }
     }
 }

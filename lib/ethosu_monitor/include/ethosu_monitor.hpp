@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -32,7 +32,7 @@ class EthosUMonitor {
 public:
     enum Backend { PRINTF, EVENT_RECORDER };
 
-    EthosUMonitor(std::vector<int32_t> eventRecordIds, Backend backend = PRINTF);
+    EthosUMonitor(Backend backend = PRINTF);
 
     template <typename T>
     void configure(ethosu_driver *drv, const T &eventIds) {
@@ -50,7 +50,10 @@ public:
             ETHOSU_PMU_CNTR_Enable(drv, 1 << i);
         }
 
+        ETHOSU_PMU_CNTR_Enable(drv, ETHOSU_PMU_CCNT_Msk);
+
         ETHOSU_PMU_EVCNTR_ALL_Reset(drv);
+        ETHOSU_PMU_CYCCNT_Reset(drv);
     }
 
     void release(ethosu_driver *drv);
@@ -58,9 +61,20 @@ public:
     void monitorSample(ethosu_driver *drv);
 
 private:
+    struct EthosuEventRecord {
+        uint64_t cycleCount;
+        uint32_t qread;
+        uint32_t status;
+        struct {
+            uint32_t eventConfig;
+            uint32_t eventCount;
+        } event[ETHOSU_PMU_NCOUNTERS];
+    };
+
+    static constexpr int32_t EthosuEventComponentNo = 0x00;
+
     ethosu_pmu_event_type ethosuEventIds[ETHOSU_PMU_NCOUNTERS];
     size_t numEvents;
-    std::vector<int32_t> eventRecordIds;
     Backend backend;
 };
 

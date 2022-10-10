@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021-2022 Arm Limited.
+# SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -121,7 +121,7 @@ target_include_directories(tflu PUBLIC
 #############################################################################
 
 if (NOT ${CORE_SOFTWARE_ACCELERATOR} STREQUAL "CPU")
-    add_subdirectory(${CMSIS_PATH}/CMSIS/NN cmsis_nn)
+    add_subdirectory(${CMSIS_NN_PATH} cmsis_nn)
 
     target_compile_options(cmsis-nn PRIVATE
         ${TFLU_OPTIMIZATION_LEVEL})
@@ -130,7 +130,7 @@ if (NOT ${CORE_SOFTWARE_ACCELERATOR} STREQUAL "CPU")
         ${TFLU_PATH}/kernels/cmsis_nn/*.cc)
 
     target_include_directories(tflu PUBLIC
-        ${CMSIS_PATH})
+        ${CMSIS_NN_PATH})
 
     target_compile_definitions(tflu PUBLIC
         CMSIS_NN)

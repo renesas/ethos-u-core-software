@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+# SPDX-FileCopyrightText: Copyright 2019-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -28,6 +28,7 @@ project(core_software VERSION 0.0.1)
 
 # Setup paths
 set(CMSIS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis" CACHE PATH "Path to CMSIS.")
+set(CMSIS_NN_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis-nn" CACHE PATH "Path to CMSIS-NN.")
 set(CMSIS_VIEW_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmsis-view" CACHE PATH "Path to cmsis-view.")
 set(CORE_DRIVER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/core_driver" CACHE PATH "Path to core driver.")
 set(LINUX_DRIVER_STACK_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../linux_driver_stack" CACHE PATH "Path to Linux driver stack for Arm Ethos-U.")

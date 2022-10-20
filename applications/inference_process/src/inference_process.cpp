@@ -154,9 +154,7 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     // Create the TFL micro interpreter
     tflite::AllOpsResolver resolver;
     tflite::ArmProfiler profiler;
-    tflite::MicroErrorReporter errorReporter;
-    tflite::MicroInterpreter interpreter(
-        model, resolver, tensorArena, tensorArenaSize, &errorReporter, nullptr, &profiler);
+    tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, nullptr, &profiler);
 
     // Set external context
     if (job.externalContext != nullptr) {

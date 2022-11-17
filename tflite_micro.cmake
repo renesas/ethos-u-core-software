@@ -30,6 +30,12 @@ include(FetchContent)
 
 # Download third party
 macro(download_third_party target)
+    cmake_policy(PUSH)
+
+    if(POLICY CMP0135)
+        cmake_policy(SET CMP0135 NEW)
+    endif()
+
     cmake_parse_arguments(DOWNLOAD "" "URL;URL_MD5;SOURCE_DIR" "" ${ARGN})
 
     message("Downloading ${DOWNLOAD_URL}")
@@ -44,6 +50,8 @@ macro(download_third_party target)
     if (NOT ${target}_POPULATED)
         FetchContent_Populate(${target})
     endif()
+
+    cmake_policy(POP)
 endmacro()
 
 function(tensorflow_source_exists RESULT TARGET SOURCE)

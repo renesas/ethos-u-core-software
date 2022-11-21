@@ -186,11 +186,13 @@ tensorflow_target_sources_glob(tflu GLOB TRUE
     ${TFLU_PATH}/*.cc
     ${TFLU_PATH}/arena_allocator/*.cc
     ${TFLU_PATH}/memory_planner/*.cc
-    ${TFLU_PATH}/kernels/*.cc)
+    ${TFLU_PATH}/kernels/*.cc
+    ${TFLU_PATH}/tflite_bridge/*.cc)
 
 tensorflow_target_sources_glob(tflu GLOB_RECURSE FALSE
     ${TFLU_PATH}/../c/*.cc
     ${TFLU_PATH}/../core/*.cc
+    ${TFLU_PATH}/../core/api/*.cc
     ${TFLU_PATH}/../kernels/*.cc
     ${TFLU_PATH}/../schema/*.cc)
 

@@ -19,6 +19,7 @@
 #ifndef ARM_PROFILER_H
 #define ARM_PROFILER_H
 
+#include "tensorflow/lite/micro/compatibility.h"
 #include "tensorflow/lite/micro/micro_profiler_interface.h"
 #include <memory>
 

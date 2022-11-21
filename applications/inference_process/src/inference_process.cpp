@@ -18,23 +18,15 @@
 
 #include "tensorflow/lite/micro/all_ops_resolver.h"
 #include "tensorflow/lite/micro/cortex_m_generic/debug_log_callback.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_time.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #include "arm_profiler.hpp"
-#ifdef LAYER_BY_LAYER_PROFILER
-#include "layer_by_layer_profiler.hpp"
-#endif
-
-#include "crc.hpp"
-
-#include "ethosu_log.h"
-
-#include "inference_process.hpp"
-
 #include "cmsis_compiler.h"
+#include "crc.hpp"
+#include "ethosu_log.h"
+#include "inference_process.hpp"
 
 #include <inttypes.h>
 

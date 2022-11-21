@@ -17,7 +17,7 @@
  */
 
 #include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/micro_time.h"
 
 #include <string.h>
@@ -36,7 +36,7 @@ ArmProfiler::ArmProfiler(size_t max_events) : max_events_(max_events), num_event
 
 uint32_t ArmProfiler::BeginEvent(const char *tag) {
     if (num_events_ == max_events_) {
-        tflite::GetMicroErrorReporter()->Report("Profiling event overflow, max: %u events", max_events_);
+        MicroPrintf("Profiling event overflow, max: %u events", max_events_);
         num_events_ = 0;
     }
 
@@ -63,10 +63,9 @@ uint64_t ArmProfiler::GetTotalTicks() const {
 }
 
 void ArmProfiler::ReportResults() const {
-    tflite::GetMicroErrorReporter()->Report("Profiler report, CPU cycles per operator:");
+    MicroPrintf("Profiler report, CPU cycles per operator:");
     for (size_t i = 0; i < num_events_; ++i) {
-        tflite::GetMicroErrorReporter()->Report(
-            "%s : cycle_cnt : %u cycles", tags_[i], end_ticks_[i] - start_ticks_[i]);
+        MicroPrintf("%s : cycle_cnt : %u cycles", tags_[i], end_ticks_[i] - start_ticks_[i]);
     }
 }
 

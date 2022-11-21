@@ -17,7 +17,7 @@
  */
 
 #include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_log.h"
 #include "tensorflow/lite/micro/micro_profiler.h"
 #include "tensorflow/lite/micro/micro_time.h"
 
@@ -41,7 +41,7 @@ LayerByLayerProfiler::LayerByLayerProfiler(size_t max_events, Backend _backend, 
 // NOTE: THIS PROFILER ONLY WORKS ON SYSTEMS WITH 1 NPU
 uint32_t LayerByLayerProfiler::BeginEvent(const char *tag) {
     if (num_events_ == max_events_) {
-        tflite::GetMicroErrorReporter()->Report("Profiling event overflow, max: %u events", max_events_);
+        MicroPrintf("Profiling event overflow, max: %u events", max_events_);
         num_events_ = 0;
     }
 

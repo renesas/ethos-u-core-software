@@ -20,7 +20,7 @@
 #define LAYER_BY_LAYER_PROFILER_H
 
 #include "EventRecorder.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow/lite/micro/compatibility.h"
 #include "tensorflow/lite/micro/micro_profiler_interface.h"
 #include <memory>
 #include <vector>

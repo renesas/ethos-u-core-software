@@ -16,7 +16,13 @@
  * limitations under the License.
  */
 
+#ifndef INFERENCE_PROCESS_OPS_RESOLVER
 #include "tensorflow/lite/micro/all_ops_resolver.h"
+#else
+#define _STRINGIFY(a) #a
+#define STRINGIFY(a)  _STRINGIFY(a)
+#include STRINGIFY(INFERENCE_PROCESS_OPS_RESOLVER)
+#endif
 #include "tensorflow/lite/micro/cortex_m_generic/debug_log_callback.h"
 #include "tensorflow/lite/micro/micro_interpreter.h"
 #include "tensorflow/lite/micro/micro_time.h"
@@ -144,7 +150,11 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     }
 
     // Create the TFL micro interpreter
+#ifndef INFERENCE_PROCESS_OPS_RESOLVER
     tflite::AllOpsResolver resolver;
+#else
+    tflite::MicroMutableOpResolver<kNumberOperators> resolver = get_resolver();
+#endif
     tflite::ArmProfiler profiler;
     tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, nullptr, &profiler);
 

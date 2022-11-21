@@ -37,3 +37,7 @@ if (TARGET ethosu_log)
 endif()
 
 target_sources(inference_process PRIVATE src/inference_process.cpp)
+
+if (DEFINED INFERENCE_PROCESS_OPS_RESOLVER)
+    target_compile_definitions(inference_process PRIVATE INFERENCE_PROCESS_OPS_RESOLVER=${INFERENCE_PROCESS_OPS_RESOLVER})
+endif()

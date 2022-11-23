@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2021 Arm Limited. All rights reserved.
+# SPDX-FileCopyrightText: Copyright 2019-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -16,8 +16,5 @@
 # limitations under the License.
 #
 
-add_library(ethosu_applications INTERFACE)
-
 # Build inference process
 add_subdirectory(inference_process)
-target_link_libraries(ethosu_applications INTERFACE inference_process)

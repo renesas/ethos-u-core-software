@@ -60,13 +60,11 @@ add_library(ethosu_core INTERFACE)
 
 # Build CMSIS
 include(cmsis.cmake)
-target_link_libraries(ethosu_core INTERFACE cmsis_core cmsis_device)
 
 # Build core driver
 if (CORE_SOFTWARE_ACCELERATOR STREQUAL "NPU")
     set(ETHOSU_PMU_INTERACTIVE OFF)
     add_subdirectory(${CORE_DRIVER_PATH} core_driver)
-    target_link_libraries(ethosu_core INTERFACE ethosu_core_driver)
 endif()
 
 # Build Tensorflow Lite Micro library
@@ -83,10 +81,6 @@ add_subdirectory(lib)
 
 # Build applications
 add_subdirectory(applications)
-
-
-# Merge libraries into static library
-target_link_libraries(ethosu_core INTERFACE tflu ethosu_applications)
 
 message(STATUS "*******************************************************")
 message(STATUS "PROJECT_NAME                           : ${PROJECT_NAME}")

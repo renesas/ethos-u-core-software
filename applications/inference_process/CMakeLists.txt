@@ -18,26 +18,18 @@
 
 set(TR_PRINT_OUTPUT_BYTES "" CACHE STRING "Print output data.")
 
-add_library(inference_process STATIC)
+add_library(inference_process INTERFACE)
 
-target_include_directories(inference_process PUBLIC include)
+target_include_directories(inference_process INTERFACE include)
 
-target_link_libraries(inference_process PRIVATE tflu cmsis_core cmsis_device ethosu_crc)
-
-if (TARGET layer_by_layer_profiler)
-    target_link_libraries(inference_process PRIVATE layer_by_layer_profiler)
-endif()
+target_link_libraries(inference_process INTERFACE tflu cmsis_core cmsis_device ethosu_crc)
 
 if (TARGET arm_profiler)
-    target_link_libraries(inference_process PRIVATE arm_profiler)
+    target_link_libraries(inference_process INTERFACE arm_profiler)
 endif()
 
 if (TARGET ethosu_log)
-    target_link_libraries(inference_process PRIVATE ethosu_log)
+    target_link_libraries(inference_process INTERFACE ethosu_log)
 endif()
 
-target_sources(inference_process PRIVATE src/inference_process.cpp)
-
-if (DEFINED INFERENCE_PROCESS_OPS_RESOLVER)
-    target_compile_definitions(inference_process PRIVATE INFERENCE_PROCESS_OPS_RESOLVER=${INFERENCE_PROCESS_OPS_RESOLVER})
-endif()
+target_sources(inference_process INTERFACE src/inference_process.cpp)

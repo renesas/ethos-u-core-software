@@ -33,9 +33,9 @@ if((CMAKE_SYSTEM_PROCESSOR MATCHES "cortex-m55(\\+|$)") AND
     string(TOLOWER ${CMAKE_CXX_COMPILER_ID} THREADX_TOOLCHAIN)
 
     #if armclang, change the format to "ac6".
-    if(THREADX_TOOLCHAIN STREQUAL "armclang")
-        set(THREADX_TOOLCHAIN "ac6")
-    endif()
+    #if(THREADX_TOOLCHAIN STREQUAL "armclang")
+    #    set(THREADX_TOOLCHAIN "ac6")
+    #endif()
 
     #if ThreadX supports this configuration, build ThreadX.
     if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/threadx/ports/${THREADX_ARCH}/${THREADX_TOOLCHAIN}/CMakeLists.txt)

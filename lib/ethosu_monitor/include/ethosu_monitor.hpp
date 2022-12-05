@@ -32,10 +32,19 @@ class EthosUMonitor {
 public:
     enum Backend { PRINTF, EVENT_RECORDER };
 
-    EthosUMonitor(Backend backend = PRINTF);
+    /**
+     * @param backend   Select which backend to output performance data to.
+     * @param merge     Merge performance samples if QREAD or STATUS has not changed
+     */
+    EthosUMonitor(Backend backend = PRINTF, bool merge = true);
 
     template <typename T>
     void configure(ethosu_driver *drv, const T &eventIds) {
+        // Reset previous record
+        prevRecord.qread  = -1;
+        prevRecord.status = -1;
+        mergeCount        = 0;
+
         // Set event ids
         numEvents = std::min(static_cast<size_t>(ETHOSU_PMU_NCOUNTERS), eventIds.size());
         for (size_t i = 0; i < numEvents; i++) {
@@ -60,6 +69,8 @@ public:
 
     void monitorSample(ethosu_driver *drv);
 
+    size_t getMergeCount() const;
+
 private:
     struct EthosuEventRecord {
         uint64_t cycleCount;
@@ -75,7 +86,10 @@ private:
 
     ethosu_pmu_event_type ethosuEventIds[ETHOSU_PMU_NCOUNTERS];
     size_t numEvents;
-    Backend backend;
+    const Backend backend;
+    const bool merge;
+    size_t mergeCount;
+    EthosuEventRecord prevRecord;
 };
 
 #endif

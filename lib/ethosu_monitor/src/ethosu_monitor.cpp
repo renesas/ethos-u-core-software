@@ -21,18 +21,27 @@
 #include <inttypes.h>
 #include <stdio.h>
 
-EthosUMonitor::EthosUMonitor(Backend __backend) : backend(__backend) {}
+EthosUMonitor::EthosUMonitor(Backend __backend, bool _merge) : backend(__backend), merge(_merge) {}
 
 void EthosUMonitor::monitorSample(ethosu_driver *drv) {
     switch (backend) {
     case EVENT_RECORDER: {
-        EthosuEventRecord record = {ETHOSU_PMU_Get_CCNTR(drv),
-                                    ETHOSU_PMU_Get_QREAD(drv),
-                                    ETHOSU_PMU_Get_STATUS(drv),
-                                    {{ethosuEventIds[0], ETHOSU_PMU_Get_EVCNTR(drv, 0)},
-                                     {ethosuEventIds[1], ETHOSU_PMU_Get_EVCNTR(drv, 1)},
-                                     {ethosuEventIds[2], ETHOSU_PMU_Get_EVCNTR(drv, 2)},
-                                     {ethosuEventIds[3], ETHOSU_PMU_Get_EVCNTR(drv, 3)}}};
+        const EthosuEventRecord record = {ETHOSU_PMU_Get_CCNTR(drv),
+                                          ETHOSU_PMU_Get_QREAD(drv),
+                                          ETHOSU_PMU_Get_STATUS(drv),
+                                          {{ethosuEventIds[0], ETHOSU_PMU_Get_EVCNTR(drv, 0)},
+                                           {ethosuEventIds[1], ETHOSU_PMU_Get_EVCNTR(drv, 1)},
+                                           {ethosuEventIds[2], ETHOSU_PMU_Get_EVCNTR(drv, 2)},
+                                           {ethosuEventIds[3], ETHOSU_PMU_Get_EVCNTR(drv, 3)}}};
+
+        // Merge records if qread or status has not changed
+        if (merge && prevRecord.qread == record.qread && prevRecord.status == record.status) {
+            mergeCount++;
+            break;
+        }
+
+        prevRecord.qread  = record.qread;
+        prevRecord.status = record.status;
 
         EventRecordData(EventID(EventLevelDetail, EthosuEventComponentNo, 0), &record, sizeof(record));
         break;
@@ -47,4 +56,8 @@ void EthosUMonitor::monitorSample(ethosu_driver *drv) {
 
 void EthosUMonitor::release(ethosu_driver *drv) {
     ETHOSU_PMU_Disable(drv);
+}
+
+size_t EthosUMonitor::getMergeCount() const {
+    return mergeCount;
 }

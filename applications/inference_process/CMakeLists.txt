@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019-2022 Arm Limited. All rights reserved.
+# SPDX-FileCopyrightText: Copyright 2019-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -33,3 +33,7 @@ if (TARGET ethosu_log)
 endif()
 
 target_sources(inference_process INTERFACE src/inference_process.cpp)
+
+if (DEFINED INFERENCE_PROCESS_OPS_RESOLVER)
+    target_compile_definitions(inference_process INTERFACE INFERENCE_PROCESS_OPS_RESOLVER=${INFERENCE_PROCESS_OPS_RESOLVER})
+endif()

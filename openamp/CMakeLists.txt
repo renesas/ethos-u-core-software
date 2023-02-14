@@ -30,10 +30,8 @@ function(build_openamp PROJECT_SYSTEM)
         src/system/${PROJECT_SYSTEM}/${PROJECT_MACHINE}/*.c
 
         # OpenAMP
-#        openamp/lib/proxy/*.c
         openamp/lib/remoteproc/*.c
         openamp/lib/rpmsg/*.c
-#        openamp/lib/service/*.c
         openamp/lib/virtio/*.c)
 
     add_library(openamp-${PROJECT_SYSTEM} STATIC
@@ -50,12 +48,15 @@ function(build_openamp PROJECT_SYSTEM)
         OPENAMP_VERSION_MINOR=0
         OPENAMP_VERSION_PATCH=0
         OPENAMP_VERSION=0
-        $<$<STREQUAL:${CMAKE_CXX_COMPILER_ID},ARMClang>:__ICCARM__>
         METAL_INTERNAL)
 
     target_link_libraries(openamp-${PROJECT_SYSTEM} PRIVATE
         cmsis_device
         $<$<STREQUAL:${PROJECT_SYSTEM},freertos>:freertos_kernel>)
+
+    target_compile_options(openamp-${PROJECT_SYSTEM} PRIVATE
+        -Wno-unknown-pragmas
+    )
 
     # Generate libmetal headers
     file(GLOB_RECURSE HDRS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/libmetal/lib" "libmetal/lib/*.h")
@@ -63,6 +64,9 @@ function(build_openamp PROJECT_SYSTEM)
     foreach(HDR ${HDRS})
         configure_file("libmetal/lib/${HDR}" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_SYSTEM}/metal/${HDR}")
     endforeach()
+
+    # Override errno.h adding support for ArmClang
+    configure_file("src/libmetal/errno.h" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_SYSTEM}/metal/errno.h")
 endfunction()
 
 build_openamp(generic)

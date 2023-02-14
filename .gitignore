@@ -2,7 +2,6 @@
 /core_driver
 /cmsis
 /cmsis-nn
-/openamp
 /rtos/freertos
 /rtos/threadx
 /rtos/zephyr

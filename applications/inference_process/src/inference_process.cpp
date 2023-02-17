@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright 2019-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * SPDX-FileCopyrightText: Copyright 2019-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -220,7 +220,7 @@ bool InferenceProcess::copyIfm(InferenceJob &job, tflite::MicroInterpreter &inte
     for (size_t i = 0; i < interpreter.inputs_size(); ++i) {
         TfLiteTensor *tensor = interpreter.input(i);
 
-        if (tensor->bytes > 0) {
+        if (tensor != nullptr && tensor->bytes > 0) {
             inputTensors.push_back(tensor);
         }
     }
@@ -267,8 +267,11 @@ bool InferenceProcess::copyOfm(InferenceJob &job, tflite::MicroInterpreter &inte
         DataPtr &output      = job.output[i];
         TfLiteTensor *tensor = interpreter.output(i);
 
+        if (tensor == nullptr) {
+            return true;
+        }
         if (tensor->bytes > output.size) {
-            LOG_ERR("Tensor size mismatch: tensor=%d, expected=%d", tensor->bytes, output.size);
+            LOG_ERR("Tensor size mismatch: tensor=%u, expected=%u", tensor->bytes, output.size);
             return true;
         }
 
@@ -296,6 +299,9 @@ bool InferenceProcess::compareOfm(InferenceJob &job, tflite::MicroInterpreter &i
         const DataPtr &expected    = job.expectedOutput[i];
         const TfLiteTensor *output = interpreter.output(i);
 
+        if (output == nullptr) {
+            return true;
+        }
         if (expected.size != output->bytes) {
             LOG_ERR("Expected output tensor size mismatch: job=%s, index=%u, expected=%zu, network=%zu",
                     job.name.c_str(),
@@ -328,7 +334,7 @@ void InferenceProcess::printJob(InferenceJob &job, tflite::MicroInterpreter &int
 
     // Print all of the output data, or the first NUM_BYTES_TO_PRINT bytes,
     // whichever comes first as well as the output shape.
-    LOG("num_of_outputs: %d\n", interpreter.outputs_size());
+    LOG("num_of_outputs: %u\n", interpreter.outputs_size());
     LOG("output_begin\n");
     LOG("[\n");
 
@@ -345,10 +351,10 @@ void InferenceProcess::printJob(InferenceJob &job, tflite::MicroInterpreter &int
 }
 
 void InferenceProcess::printOutputTensor(TfLiteTensor *output, size_t bytesToPrint) {
-    constexpr auto crc        = Crc();
-    const uint32_t crc32      = crc.crc32(output->data.data, output->bytes);
-    const int numBytesToPrint = min(output->bytes, bytesToPrint);
-    int dims_size             = output->dims->size;
+    constexpr auto crc           = Crc();
+    const uint32_t crc32         = crc.crc32(output->data.data, output->bytes);
+    const size_t numBytesToPrint = min(output->bytes, bytesToPrint);
+    int dims_size                = output->dims->size;
 
     LOG("{\n");
     LOG("\"dims\": [%d,", dims_size);

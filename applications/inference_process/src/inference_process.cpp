@@ -158,16 +158,16 @@ bool InferenceProcess::runJob(InferenceJob &job) {
     tflite::ArmProfiler profiler;
     tflite::MicroInterpreter interpreter(model, resolver, tensorArena, tensorArenaSize, nullptr, &profiler);
 
-    // Set external context
-    if (job.externalContext != nullptr) {
-        interpreter.SetMicroExternalContext(job.externalContext);
-    }
-
     // Allocate tensors
     TfLiteStatus status = interpreter.AllocateTensors();
     if (status != kTfLiteOk) {
         LOG_ERR("Failed to allocate tensors for inference: job=%s", job.name.c_str());
         return true;
+    }
+
+    // Set external context
+    if (job.externalContext != nullptr) {
+        interpreter.SetMicroExternalContext(job.externalContext);
     }
 
     // Copy IFM data from job descriptor to TFLu arena

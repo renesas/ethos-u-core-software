@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2022 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2019-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -75,9 +75,9 @@ class InferenceProcess {
 public:
     InferenceProcess(uint8_t *_tensorArena, size_t _tensorArenaSize);
 
-    bool runJob(InferenceJob &job);
+    virtual bool runJob(InferenceJob &job);
 
-private:
+protected:
     static bool copyIfm(InferenceJob &job, tflite::MicroInterpreter &interpreter);
     static bool copyOfm(InferenceJob &job, tflite::MicroInterpreter &interpreter);
     static bool compareOfm(InferenceJob &job, tflite::MicroInterpreter &interpreter);

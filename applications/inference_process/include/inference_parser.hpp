@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Arm Limited. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -108,8 +108,8 @@ private:
             return true;
         }
 
-        if (shape->Length() == 0) {
-            printf("Warning: shape zero length.\n");
+        if (shape->size() == 0) {
+            printf("Warning: shape zero size.\n");
             return true;
         }
 

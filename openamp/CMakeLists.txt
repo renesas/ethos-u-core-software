@@ -55,7 +55,9 @@ function(build_openamp PROJECT_SYSTEM)
         $<$<STREQUAL:${PROJECT_SYSTEM},freertos>:freertos_kernel>)
 
     target_compile_options(openamp-${PROJECT_SYSTEM} PRIVATE
+        -Wno-cast-align
         -Wno-unknown-pragmas
+        -Wno-unused-but-set-variable
     )
 
     # Generate libmetal headers

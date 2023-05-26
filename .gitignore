@@ -1,6 +1,7 @@
 /build
 /core_driver
 /cmsis
+/cmsis-dsp
 /cmsis-nn
 /rtos/freertos
 /rtos/threadx

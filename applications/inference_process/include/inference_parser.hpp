@@ -80,7 +80,11 @@ public:
         if (model == nullptr) {
             return true;
         }
-        strncpy(description, model->description()->c_str(), sizeof(description));
+
+        // Depending on the src string, strncpy may not add a null-terminator
+        // so one is manually added at the end.
+        strncpy(description, model->description()->c_str(), S - 1);
+        description[S - 1] = '\0';
 
         // Get input dimensions for first subgraph
         auto *subgraph = *model->subgraphs()->begin();

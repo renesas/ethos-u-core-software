@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: Copyright 2021-2022 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: Copyright 2021-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -97,8 +97,8 @@ endfunction()
 # Flatbuffers
 # Synch revision with 'tensorflow/lite/micro/tools/make/flatbuffers_download.sh'
 download_third_party(tensorflow-flatbuffers
-    URL "https://github.com/google/flatbuffers/archive/a66de58af9565586832c276fbb4251fc416bf07f.zip"
-    URL_MD5 51a7a96747e1c33eb4aac6d52513a02f)
+    URL "https://github.com/google/flatbuffers/archive/v23.5.26.zip"
+    URL_MD5 e87e8acd8e2d53653387ad78720316e2)
 
 target_include_directories(tflu PUBLIC
     ${tensorflow-flatbuffers_SOURCE_DIR}/include)

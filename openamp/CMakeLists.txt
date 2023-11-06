@@ -1,6 +1,5 @@
 #
 # SPDX-FileCopyrightText: Copyright 2022-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
-#
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the License); you may
@@ -67,8 +66,6 @@ function(build_openamp PROJECT_SYSTEM)
         configure_file("libmetal/lib/${HDR}" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_SYSTEM}/metal/${HDR}")
     endforeach()
 
-    # Override errno.h adding support for ArmClang
-    configure_file("src/libmetal/errno.h" "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_SYSTEM}/metal/errno.h")
 endfunction()
 
 build_openamp(generic)

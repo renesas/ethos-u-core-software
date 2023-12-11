@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: Copyright 2021-2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-FileCopyrightText: Copyright 2023 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 #
 # Licensed under the Apache License, Version 2.0 (the License); you may
@@ -15,20 +15,7 @@
 # limitations under the License.
 #
 
-# Build layer_by_layer_profiler
-add_subdirectory(layer_by_layer_profiler)
+add_library(ethosu_profiler STATIC)
 
-# Build arm_profiler
-add_subdirectory(arm_profiler)
-
-# Build ethosu_monitor
-add_subdirectory(ethosu_monitor)
-
-# Build ethosu_logging
-add_subdirectory(ethosu_log)
-
-# Build ethosu_profiler
-add_subdirectory(ethosu_profiler)
-
-# Build crc lib
-add_subdirectory(crc)
+target_include_directories(ethosu_profiler PUBLIC include)
+target_sources(ethosu_profiler PRIVATE src/ethosu_profiler.cpp)

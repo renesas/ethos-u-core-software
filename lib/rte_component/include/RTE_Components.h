@@ -19,6 +19,6 @@
 #ifndef RTE_COMPONENTS_H
 #define RTE_COMPONENTS_H
 
-#define CMSIS_device_header RTE_Components_CMSIS_device_header
+#define CMSIS_device_header "bsp_api.h"
 
 #endif

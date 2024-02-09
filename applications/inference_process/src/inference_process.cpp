@@ -29,7 +29,13 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #include "arm_profiler.hpp"
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "cmsis_compiler.h"
+#ifdef __cplusplus
+}
+#endif
 #include "crc.hpp"
 #include "ethosu_log.h"
 #include "inference_process.hpp"
@@ -309,7 +315,7 @@ bool InferenceProcess::compareOfm(InferenceJob &job, tflite::MicroInterpreter &i
 
         const char *exp = expected.begin();
         for (unsigned int j = 0; j < output->bytes; ++j) {
-            if (output->data.uint8[j] != exp[j]) {
+            if (output->data.uint8[j] != (uint8_t)exp[j]) {
                 LOG_ERR("Expected output tensor data mismatch: job=%s, index=%u, offset=%u, "
                         "expected=%02x, network=%02x\n",
                         job.name.c_str(),
